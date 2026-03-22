@@ -286,6 +286,7 @@ docker-data/
 # ------------------------
 # CLAUDE
 # ------------------------
+.claude/
 CLAUDE.md
 *.swp
 *.swo
