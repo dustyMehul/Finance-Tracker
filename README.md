@@ -1,5 +1,10 @@
-# Finance-Tracker
-A project for locally maintaining personal finance (bank and credit card statements)
+# Finance Tracker
+
+A local-first personal finance tracker. Ingests bank and credit card statements, enriches and deduplicates transactions, categorizes them using a local Ollama LLM, and provides a reconciliation UI and reports. Everything runs on your own machine — no cloud.
+
+## Repo Structure
+
+```
 finance-tracker/
 ├── frontend/                                # UI / frontend
 │   ├── src/
@@ -87,3 +92,26 @@ finance-tracker/
 ├── .env.example                             # OLLAMA_HOST, DB_PATH, UPLOAD_DIR, LOG_LEVEL
 ├── .gitignore                               # data/, __pycache__/, node_modules/, .env
 └── README.md
+```
+
+## Tech Stack
+
+- **Backend**: FastAPI, SQLAlchemy, Alembic, SQLite, ChromaDB, pydantic-settings
+- **AI**: Ollama (local LLM) — default model: `llama3`, embedding model: `nomic-embed-text`
+- **Frontend**: Vite + React + TypeScript, Recharts, TanStack Query, React Router
+- **Parsers**: pdfplumber (PDF), ofxparse (OFX/QIF), pandas + xlrd (XLS/CSV)
+
+## Running Locally
+
+```bash
+# backend (run from backend/ directory)
+source venv/bin/activate
+uvicorn app.main:app --reload
+
+# smoke test parser against a real file
+python scripts/test_parser.py path/to/statement.xls
+
+# frontend (once scaffolded)
+cd frontend
+npm run dev
+```
