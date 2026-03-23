@@ -24,6 +24,7 @@ class JobStatus(str, enum.Enum):
     processing = "processing"
     done       = "done"
     failed     = "failed"
+    finalized  = "finalized"   # locked — no further edits from UI
 
 
 class AccountType(str, enum.Enum):
@@ -43,7 +44,7 @@ class ReviewStatus(str, enum.Enum):
     approved = "approved"  # user confirmed the category
     edited   = "edited"    # user changed the category
     ignored  = "ignored"   # user excluded this transaction
-
+    finalized = "finalized"   # locked after job is finalized
 
 # ---------------------------------------------------------------------------
 # UploadJob — one row per file the user drops
@@ -67,6 +68,7 @@ class UploadJob(Base):
 
     created_at      = Column(DateTime, server_default=func.now())
     updated_at      = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    finalized_at    = Column(DateTime, nullable=True)   # set when finalized
 
     # relationships
     transactions    = relationship("Transaction", back_populates="upload_job")
