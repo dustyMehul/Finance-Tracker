@@ -1,0 +1,17 @@
+[project]
+name = "finance-tracker-backend"
+version = "0.1.0"
+description = "Backend API for Finance Tracker"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.135.1",
+    "pydantic==2.12.5",
+    "pydantic-settings==2.13.1",
+    "python-dotenv==1.2.2",
+    "SQLAlchemy==2.0.48",
+    "uvicorn[standard]==0.38.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
