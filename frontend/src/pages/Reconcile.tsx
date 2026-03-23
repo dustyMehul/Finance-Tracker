@@ -16,6 +16,7 @@ export default function Reconcile() {
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [noteValue, setNoteValue] = useState("")
+  const [labelValue, setLabelValue] = useState<string>("")
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ["jobs"],
@@ -69,7 +70,14 @@ export default function Reconcile() {
   }
 
   function saveNote(txn: Transaction) {
-    updateMutation.mutate({ id: txn.id, update: { user_note: noteValue, review_status: "edited" } })
+    const update: Parameters<typeof updateTransaction>[1] = {
+      user_note: noteValue,
+      review_status: "edited",
+    }
+    if (labelValue && labelValue !== txn.label_id) {
+      update.label_id = labelValue
+    }
+    updateMutation.mutate({ id: txn.id, update })
   }
 
   function approveAll(jobId: string) {
@@ -268,6 +276,7 @@ export default function Reconcile() {
                                   <ActionBtn label="✎" color="#0C447C" onClick={() => {
                                     setEditingId(isEditing ? null : txn.id)
                                     setNoteValue(txn.user_note ?? "")
+                                    setLabelValue(txn.label_id ?? "")
                                   }} />
                                 </div>
                               </td>
@@ -275,11 +284,28 @@ export default function Reconcile() {
                             {isEditing && (
                               <tr style={{ background: "#E6F1FB11" }}>
                                 <td colSpan={7} style={{ padding: "10px 12px" }}>
-                                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                                    {/* category dropdown */}
+                                    <select
+                                      value={labelValue}
+                                      onChange={e => setLabelValue(e.target.value)}
+                                      style={{
+                                        padding: "6px 10px", borderRadius: 6,
+                                        border: "0.5px solid #d3d1c7", fontSize: 13,
+                                        background: "transparent", color: "inherit",
+                                        minWidth: 160,
+                                      }}
+                                    >
+                                      <option value="">— category —</option>
+                                      {labels.map(l => (
+                                        <option key={l.id} value={l.id}>{l.name}</option>
+                                      ))}
+                                    </select>
+                                    {/* note input */}
                                     <input
                                       autoFocus
                                       type="text"
-                                      placeholder="Add a note…"
+                                      placeholder="Add a note… (optional)"
                                       value={noteValue}
                                       onChange={e => setNoteValue(e.target.value)}
                                       onKeyDown={e => e.key === "Enter" && saveNote(txn)}
@@ -287,6 +313,7 @@ export default function Reconcile() {
                                         flex: 1, padding: "6px 10px", borderRadius: 6,
                                         border: "0.5px solid #d3d1c7", fontSize: 13,
                                         background: "transparent", color: "inherit",
+                                        minWidth: 160,
                                       }}
                                     />
                                     <button onClick={() => saveNote(txn)} style={saveBtnStyle}>Save</button>
