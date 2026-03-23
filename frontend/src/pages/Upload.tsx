@@ -84,11 +84,11 @@ export default function Upload() {
   const hasPending = entries.some(e => e.status === "pending")
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 1rem" }}>
-      <h1 style={{ fontSize: 20, fontWeight: 500, marginBottom: 4 }}>
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 2rem" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>
         Import statements
       </h1>
-      <p style={{ fontSize: 13, color: "#888780", marginBottom: 24, marginTop: 0 }}>
+      <p style={{ fontSize: 14, color: "#888780", marginBottom: 24, marginTop: 0 }}>
         Drop one or more bank statements to get started.
       </p>
 

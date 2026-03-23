@@ -89,9 +89,9 @@ export default function Reconcile() {
   if (jobsLoading) return <div style={{ padding: "2rem", color: "#888780" }}>Loading…</div>
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1rem" }}>
-      <h1 style={{ fontSize: 20, fontWeight: 500, margin: "0 0 6px" }}>Reconcile</h1>
-      <p style={{ fontSize: 13, color: "#888780", margin: "0 0 28px" }}>
+    <div style={{ maxWidth: 1400, margin: "0 auto", padding: "2rem 2rem" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 6px" }}>Reconcile</h1>
+      <p style={{ fontSize: 14, color: "#888780", margin: "0 0 28px" }}>
         Review and finalize each imported statement.
         Finalized statements are locked and used in reports.
       </p>
@@ -192,13 +192,14 @@ export default function Reconcile() {
                 )}
 
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                     <thead>
                       <tr style={{ borderBottom: "0.5px solid #d3d1c7" }}>
                         {["Date", "Description", "Amount", "Category", "Conf.", "Status", "Actions"].map(h => (
                           <th key={h} style={{
-                            padding: "8px 12px", textAlign: "left",
+                            padding: "10px 12px", textAlign: "left",
                             fontWeight: 500, color: "#888780", whiteSpace: "nowrap",
+                            fontSize: 13,
                           }}>{h}</th>
                         ))}
                       </tr>

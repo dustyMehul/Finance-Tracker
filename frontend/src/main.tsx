@@ -4,11 +4,12 @@ import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import Upload from "./pages/Upload"
 import Reconcile from "./pages/Reconcile"
+import Labels from "./pages/Labels"
 
 const queryClient = new QueryClient()
 
 const navStyle = (active: boolean): React.CSSProperties => ({
-  fontSize: 13,
+  fontSize: 15,
   fontWeight: active ? 500 : 400,
   color: active ? "#1a1a18" : "#888780",
   textDecoration: "none",
@@ -20,14 +21,16 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div style={{ borderBottom: "0.5px solid #d3d1c7", padding: "12px 24px", display: "flex", gap: 24, alignItems: "center" }}>
-          <span style={{ fontWeight: 500, fontSize: 14, marginRight: 8 }}>Finance Tracker</span>
-          <NavLink to="/"         style={({ isActive }) => navStyle(isActive)}>Import</NavLink>
+        <div style={{ borderBottom: "0.5px solid #d3d1c7", padding: "14px 32px", display: "flex", gap: 28, alignItems: "center" }}>
+          <span style={{ fontWeight: 600, fontSize: 16, marginRight: 8 }}>Finance Tracker</span>
+          <NavLink to="/"          style={({ isActive }) => navStyle(isActive)}>Import</NavLink>
           <NavLink to="/reconcile" style={({ isActive }) => navStyle(isActive)}>Reconcile</NavLink>
+          <NavLink to="/labels"    style={({ isActive }) => navStyle(isActive)}>Labels</NavLink>
         </div>
         <Routes>
           <Route path="/"          element={<Upload />} />
           <Route path="/reconcile" element={<Reconcile />} />
+          <Route path="/labels"    element={<Labels />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
