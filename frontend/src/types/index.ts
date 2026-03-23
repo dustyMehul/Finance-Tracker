@@ -1,6 +1,6 @@
 export type AccountType = "savings" | "current" | "credit" | "wallet"
-export type JobStatus = "pending" | "processing" | "done" | "failed"
-export type ReviewStatus = "pending" | "approved" | "edited" | "ignored"
+export type JobStatus = "pending" | "processing" | "done" | "failed" | "finalized"
+export type ReviewStatus = "pending" | "approved" | "edited" | "ignored" | "finalized"
 export type TransactionType = "debit" | "credit"
 
 export interface UploadJobResponse {
@@ -9,7 +9,9 @@ export interface UploadJobResponse {
   status: JobStatus
   transaction_count: number | null
   duplicate_count: number | null
+  pending_count: number | null
   error_message: string | null
+  finalized_at: string | null
   created_at: string
 }
 
