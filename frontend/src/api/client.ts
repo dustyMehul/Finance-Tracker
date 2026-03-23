@@ -21,8 +21,12 @@ export async function uploadStatement(
   if (meta.bank) form.append("bank", meta.bank)
   if (meta.account_type) form.append("account_type", meta.account_type)
   if (meta.account_nickname) form.append("account_nickname", meta.account_nickname)
-
   const { data } = await api.post<UploadJobResponse>("/upload", form)
+  return data
+}
+
+export async function getJobs(): Promise<UploadJobResponse[]> {
+  const { data } = await api.get<UploadJobResponse[]>("/upload/jobs")
   return data
 }
 
@@ -31,10 +35,16 @@ export async function getJobStatus(jobId: string): Promise<UploadJobResponse> {
   return data
 }
 
+export async function finalizeJob(jobId: string): Promise<UploadJobResponse> {
+  const { data } = await api.post<UploadJobResponse>(`/upload/${jobId}/finalize`)
+  return data
+}
+
 // --- Transactions ---
 export async function getTransactions(params?: {
   review_status?: string
   upload_job_id?: string
+  include_finalized?: boolean
   skip?: number
   limit?: number
 }): Promise<Transaction[]> {
