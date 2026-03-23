@@ -44,7 +44,7 @@ def _parse_amount(value: str | float | int) -> float:
 def _parse_date(value: str) -> str:
     """
     Normalise various date formats to ISO 'YYYY-MM-DD'.
-    Handles: '04/02/2026 / 10:05'  '04/02/2026'  '2026-02-04'  '04-Feb-2026'
+    Returns empty string if parsing fails — callers must check for this.
     """
     if not value:
         return ""
@@ -56,11 +56,12 @@ def _parse_date(value: str) -> str:
 
     formats = [
         "%d/%m/%Y",
+        "%d/%m/%y",    # HDFC savings: 02/03/26
         "%d-%m-%Y",
+        "%d-%m-%y",
         "%Y-%m-%d",
         "%d-%b-%Y",    # 04-Feb-2026
         "%d %b %Y",    # 04 Feb 2026
-        "%d/%m/%y",
         "%m/%d/%Y",
     ]
     for fmt in formats:
@@ -70,7 +71,7 @@ def _parse_date(value: str) -> str:
             continue
 
     logger.warning("Could not parse date: %s", value)
-    return s  # return as-is rather than crashing
+    return ""   # empty string — caller skips this row
 
 
 def _infer_type(amount_raw: str, description: str = "") -> str:
@@ -120,11 +121,14 @@ def _parse_xls(file_path: Path, ctx: PipelineContext) -> list[RawTransaction]:
 
     transactions = []
 
-    # Find the header row — look for a row containing 'Date' or 'Description'
+    # Find the header row — look for a row containing date + description/narration
     header_row_idx = None
     for i, row in df.iterrows():
         row_str = " ".join(str(v).lower() for v in row if pd.notna(v))
-        if "date" in row_str and "description" in row_str:
+        has_date   = "date" in row_str
+        has_desc   = any(k in row_str for k in ("description", "narration", "particulars"))
+        has_amount = any(k in row_str for k in ("amount", "withdrawal", "deposit", "debit", "credit", "amt"))
+        if has_date and (has_desc or has_amount):
             header_row_idx = i
             break
 
@@ -139,10 +143,13 @@ def _parse_xls(file_path: Path, ctx: PipelineContext) -> list[RawTransaction]:
 
     # Normalise column names
     col_map = {
-        "date": ["date & time", "date", "transaction date", "txn date"],
+        "date": ["date & time", "date", "transaction date", "txn date", "value dt"],
         "description": ["description", "narration", "particulars", "merchant"],
         "amount": ["amt", "amount", "transaction amount"],
         "direction": ["debit / credit", "dr/cr", "type", "cr/dr"],
+        "withdrawal": ["withdrawal amt.", "withdrawal amt", "withdrawal", "debit amt.", "debit amt"],
+        "deposit": ["deposit amt.", "deposit amt", "deposit", "credit amt.", "credit amt"],
+        "balance": ["closing balance", "balance", "running balance"],
     }
 
     def find_col(candidates):
@@ -152,50 +159,88 @@ def _parse_xls(file_path: Path, ctx: PipelineContext) -> list[RawTransaction]:
                     return col
         return None
 
-    date_col      = find_col(col_map["date"])
-    desc_col      = find_col(col_map["description"])
-    amount_col    = find_col(col_map["amount"])
-    direction_col = find_col(col_map["direction"])  # 'Dr' / 'Cr' column
+    date_col       = find_col(col_map["date"])
+    desc_col       = find_col(col_map["description"])
+    amount_col     = find_col(col_map["amount"])
+    direction_col  = find_col(col_map["direction"])
+    withdrawal_col = find_col(col_map["withdrawal"])
+    deposit_col    = find_col(col_map["deposit"])
+    balance_col    = find_col(col_map["balance"])
 
-    if not all([date_col, desc_col, amount_col]):
+    # HDFC savings uses separate withdrawal/deposit columns — no single amount col
+    has_split_cols = withdrawal_col and deposit_col
+
+    if not all([date_col, desc_col]) or (not amount_col and not has_split_cols):
         ctx.add_warning(
             f"Could not map all columns. Found: date={date_col}, "
-            f"desc={desc_col}, amount={amount_col}. Trying positional parse."
+            f"desc={desc_col}, amount={amount_col}, "
+            f"withdrawal={withdrawal_col}, deposit={deposit_col}. Trying positional parse."
         )
         return _parse_xls_positional(df, ctx)
 
     for _, row in df.iterrows():
-        date_val      = row.get(date_col)
-        desc_val      = row.get(desc_col)
-        amount_val    = row.get(amount_col)
-        direction_val = row.get(direction_col) if direction_col else None
+        date_val  = row.get(date_col)
+        desc_val  = row.get(desc_col)
 
-        # Skip summary/empty rows
-        if pd.isna(date_val) or pd.isna(amount_val):
-            continue
-        if str(date_val).strip() in ("", "nan", "Date & Time"):
+        # Skip empty, separator, or summary rows
+        if pd.isna(date_val) or str(date_val).strip() in ("", "nan", "Date", "********"):
             continue
 
         date_str    = _parse_date(str(date_val))
-        amount      = _parse_amount(amount_val)
+        if not date_str:
+            continue
+
         description = str(desc_val).strip() if pd.notna(desc_val) else ""
 
-        # Use explicit Dr/Cr column when available — much more reliable
-        if pd.notna(direction_val):
-            d = str(direction_val).strip().lower()
-            txn_type = "credit" if d in ("cr", "credit", "c") else "debit"
-        else:
-            txn_type = _infer_type(str(amount_val), description)
+        # --- determine amount and direction ---
+        if has_split_cols:
+            # HDFC savings style: separate withdrawal and deposit columns
+            w = row.get(withdrawal_col)
+            d = row.get(deposit_col)
+            withdrawal = _parse_amount(w) if pd.notna(w) and str(w).strip() not in ("", "nan") else 0.0
+            deposit    = _parse_amount(d) if pd.notna(d) and str(d).strip() not in ("", "nan") else 0.0
 
-        if not date_str or amount == 0.0:
-            ctx.skipped_rows.append(dict(row))
+            if withdrawal > 0:
+                amount, txn_type = withdrawal, "debit"
+            elif deposit > 0:
+                amount, txn_type = deposit, "credit"
+            else:
+                ctx.skipped_rows.append(dict(row))
+                continue
+        else:
+            amount_val = row.get(amount_col)
+            if pd.isna(amount_val) or str(amount_val).strip() in ("", "nan"):
+                ctx.skipped_rows.append(dict(row))
+                continue
+            amount = _parse_amount(amount_val)
+
+            if pd.notna(direction_col) and direction_col:
+                direction_val = row.get(direction_col)
+                if pd.notna(direction_val):
+                    d = str(direction_val).strip().lower()
+                    txn_type = "credit" if d in ("cr", "credit", "c") else "debit"
+                else:
+                    txn_type = _infer_type(str(amount_val), description)
+            else:
+                txn_type = _infer_type(str(amount_val), description)
+
+        if amount == 0.0:
             continue
+
+        # closing balance
+        balance = None
+        if balance_col and pd.notna(row.get(balance_col)):
+            try:
+                balance = float(str(row.get(balance_col)).replace(",", ""))
+            except ValueError:
+                pass
 
         transactions.append(RawTransaction(
             date=date_str,
             description=description,
             amount=amount,
             transaction_type=txn_type,
+            balance=balance,
             currency="INR",
         ))
 

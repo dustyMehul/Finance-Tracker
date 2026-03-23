@@ -5,7 +5,7 @@ Transaction categorizer using Ollama.
 Uses a simple single-word response format for reliability with small models.
 """
 
-import httpx # type: ignore
+import httpx
 import json
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -17,29 +17,50 @@ logger = get_logger(__name__)
 # Handles the most common Indian transaction patterns deterministically
 KEYWORD_RULES: list[tuple[list[str], str]] = [
     # credit card payment
-    (["CC PAYMENT", "CREDIT CARD PAYMENT", "BPPY", "BILLDESK CC"], "cc_payment"),
+    (["CC PAYMENT", "CREDIT CARD PAYMENT", "BPPY", "BILLDESK CC",
+      "MYCARDS CC BILL PAY", "IB BILLPAY DR", "CC BILL PAY"], "cc_payment"),
+    # investments — Zerodha, NSE, BSE, mutual funds
+    (["ZERODHA", "NSE CLEARING", "BSE CLEARING", "INDIAN CLEARING CORP",
+      "ACH D- ZERODHA", "ACH D- INDIAN CLEARING",
+      "NSDL", "CDSL", "MUTUAL FUND", "MF ", "SIP ",
+      "GROWW", "KUVERA", "COIN BY ZERODHA", "SMALLCASE"], "investments"),
     # utilities
     (["PZELECTRICITY", "ELECTRICITY", "BESCOM", "MSEDCL", "TPDDL", "BSES"], "utilities"),
     # mobile / internet
-    (["PZPOSTPAID", "PZRECHARGE", "AIRTEL", "JIOFIBER", "BSNL", "VODAFONE", "VI ", "RECHARGE"], "mobile_internet"),
+    (["PZPOSTPAID", "PZRECHARGE", "AIRTEL", "JIOFIBER", "BSNL",
+      "VODAFONE", "VI ", "RECHARGE"], "mobile_internet"),
     # insurance
-    (["PZINSURANCE", "INSURANCE", "LIC ", "HDFC LIFE", "ICICI PRU", "SBI LIFE"], "insurance"),
+    (["PZINSURANCE", "INSURANCE", "LIC ", "LIC BILLDESK", "HDFC LIFE",
+      "ICICI PRU", "SBI LIFE", "STAR HEALTH", "TATA AIG"], "insurance"),
     # fuel
-    (["BPCL", "HPCL", "IOCL", "INDIAN OIL", "PETROL", "BHARAT PETROLEUM", "NAYARA"], "fuel"),
+    (["BPCL", "HPCL", "IOCL", "INDIAN OIL", "PETROL",
+      "BHARAT PETROLEUM", "NAYARA", "ESSAR OIL"], "fuel"),
     # tax
     (["CBDT", "INCOME TAX", "GST PAYMENT", "TDS PAYMENT"], "tax"),
+    # rent
+    (["RENT", "HOUSE RENT", "HRA "], "transfer"),
     # groceries
-    (["AVENUE SUPERMARTS", "DMART", "BIGBASKET", "GROFERS", "BLINKIT", "ZEPTO", "SWIGGY INSTAMART"], "groceries"),
+    (["AVENUE SUPERMARTS", "DMART", "BIGBASKET", "GROFERS", "BLINKIT",
+      "ZEPTO", "SWIGGY INSTAMART", "KIRANA", "GROCER"], "groceries"),
     # food & dining
-    (["MCDONALDS", "MC DONALDS", "ZOMATO", "SWIGGY", "DOMINOS", "PIZZA", "CAFE", "RESTAURANT", "DINING", "FOOD"], "food_dining"),
+    (["MCDONALDS", "MC DONALDS", "ZOMATO", "SWIGGY", "DOMINOS", "PIZZA",
+      "CAFE", "RESTAURANT", "DINING", "FOOD", "BISTRO", "SARJAPU",
+      "SCOTCH YARD", "HORTICULTU", "BHARATPE"], "food_dining"),
     # travel & hotels
-    (["LEMON TREE", "HOTEL", "MAKEMYTRIP", "IRCTC", "CLEARTRIP", "GOIBIBO", "OYO", "AIRLINES", "INDIGO", "SPICEJET"], "travel_hotels"),
+    (["LEMON TREE", "HOTEL", "MAKEMYTRIP", "IRCTC", "CLEARTRIP",
+      "GOIBIBO", "OYO", "AIRLINES", "INDIGO", "SPICEJET",
+      "ACH C- INDIAN RAILWAY"], "travel_hotels"),
     # shopping
-    (["DECATHLON", "AMAZON", "FLIPKART", "MYNTRA", "AJIO", "NYKAA", "GYFTR", "SMARTBUY"], "shopping"),
+    (["DECATHLON", "AMAZON", "FLIPKART", "MYNTRA", "AJIO", "NYKAA",
+      "GYFTR", "SMARTBUY", "PIXEL MOTORS", "BEARDO"], "shopping"),
     # health
-    (["PHARMACY", "HOSPITAL", "CLINIC", "APOLLO", "MEDPLUS", "NETMEDS", "1MG"], "health_medical"),
+    (["PHARMACY", "HOSPITAL", "CLINIC", "APOLLO", "MEDPLUS",
+      "NETMEDS", "1MG", "PRACTO"], "health_medical"),
     # transport
     (["UBER", "OLA", "RAPIDO", "METRO", "NAMMA", "AUTO"], "transport"),
+    # transfers — UPI person-to-person, IMPS, NEFT, FT
+    (["IMPS-", "NEFT-", "FT- ", "ACH C-", "SWEEP-IN",
+      "INT. ON SWCR", "TPT-MONEY RETURN"], "transfer"),
 ]
 
 
