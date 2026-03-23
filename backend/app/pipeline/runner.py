@@ -14,24 +14,12 @@ from datetime import date
 from app.pipeline.context import PipelineContext
 from app.pipeline.steps.parser import ParserStep
 from app.pipeline.steps.enricher import EnricherStep
+from app.pipeline.steps.categorizer import CategorizerStep
 from app.db.models import Transaction, UploadJob, JobStatus
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# ---------------------------------------------------------------------------
-# Ordered step list — append new steps here
-# ---------------------------------------------------------------------------
-STEPS = [
-    ParserStep(),
-    EnricherStep(),
-    # CategorizerStep(),   # Phase 5
-]
-
-
-# ---------------------------------------------------------------------------
-# Runner
-# ---------------------------------------------------------------------------
 
 def run_pipeline(ctx: PipelineContext, db: Session) -> PipelineContext:
     """
@@ -39,10 +27,16 @@ def run_pipeline(ctx: PipelineContext, db: Session) -> PipelineContext:
     On success: bulk-inserts transactions and marks job as done.
     On failure: marks job as failed with error message.
     """
+    # build steps here so categorizer gets the db session
+    steps = [
+        ParserStep(),
+        EnricherStep(),
+        CategorizerStep(db=db),
+    ]
+
     logger.info("Pipeline starting for job %s (%s)", ctx.job_id, ctx.file_path.name)
 
-    # --- run each step ---
-    for step in STEPS:
+    for step in steps:
         logger.info("Running step: %s", step)
         step.run(ctx)
 
@@ -54,7 +48,7 @@ def run_pipeline(ctx: PipelineContext, db: Session) -> PipelineContext:
             _mark_job_failed(ctx.job_id, ctx.errors, db)
             return ctx
 
-    # --- all steps passed — persist to DB ---
+    # all steps passed — persist to DB
     if not ctx.transactions:
         ctx.add_error("Pipeline completed but produced no transactions.")
         _mark_job_failed(ctx.job_id, ctx.errors, db)
@@ -75,15 +69,9 @@ def run_pipeline(ctx: PipelineContext, db: Session) -> PipelineContext:
     return ctx
 
 
-# ---------------------------------------------------------------------------
-# DB helpers
-# ---------------------------------------------------------------------------
-
 def _insert_transactions(ctx: PipelineContext, db: Session) -> None:
-    """Bulk-insert all enriched transactions from ctx into the DB."""
     rows = []
     for t in ctx.transactions:
-        # convert date string → Python date object for the ORM
         txn_date = t["date"]
         if isinstance(txn_date, str):
             txn_date = date.fromisoformat(txn_date)
