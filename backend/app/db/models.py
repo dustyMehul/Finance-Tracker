@@ -1,9 +1,9 @@
-from sqlalchemy import (
+from sqlalchemy import ( # type: ignore
     Column, String, Float, Date, DateTime, Boolean,
     Integer, ForeignKey, Text, Enum as SAEnum
 )
-from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy.sql import func
+from sqlalchemy.orm import declarative_base, relationship # type: ignore
+from sqlalchemy.sql import func # type: ignore
 import enum
 import uuid
 
