@@ -2,7 +2,7 @@
 pipeline/steps/categorizer.py
 """
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session # type: ignore
 from app.pipeline.steps.base import PipelineStep
 from app.pipeline.context import PipelineContext
 from app.ai import ollama_client, embedder

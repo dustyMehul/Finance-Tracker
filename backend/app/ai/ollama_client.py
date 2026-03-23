@@ -5,7 +5,7 @@ Transaction categorizer using Ollama.
 Uses a simple single-word response format for reliability with small models.
 """
 
-import httpx
+import httpx # type: ignore
 import json
 from app.core.config import settings
 from app.core.logging import get_logger
