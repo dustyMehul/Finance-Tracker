@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import Upload from "./pages/Upload"
 import Reconcile from "./pages/Reconcile"
+import Labels from "./pages/Labels"
 //import Labels from "./pages/Labels"
 import Reports from "./pages/Reports"
 
@@ -32,6 +33,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/"          element={<Upload />} />
           <Route path="/reconcile" element={<Reconcile />} />
+          <Route path="/labels"    element={<Labels />} />
           {/* <Route path="/labels"    element={<Labels />} /> */}
           <Route path="/reports"   element={<Reports />} />
         </Routes>
