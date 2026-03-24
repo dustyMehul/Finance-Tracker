@@ -74,7 +74,11 @@ def _insert_transactions(ctx: PipelineContext, db: Session) -> None:
     for t in ctx.transactions:
         txn_date = t["date"]
         if isinstance(txn_date, str):
-            txn_date = date.fromisoformat(txn_date)
+            try:
+                txn_date = date.fromisoformat(txn_date)
+            except ValueError:
+                logger.warning("Skipping transaction with invalid date: %s", txn_date)
+                continue
 
         rows.append(Transaction(
             upload_job_id=t["upload_job_id"],
