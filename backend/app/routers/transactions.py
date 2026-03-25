@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.db.database import get_db
-from app.db.models import Transaction, ReviewStatus, Label
+from app.db.models import Transaction, ReviewStatus, Label, FinancialNature
 from app.db import vector_store
 from app.ai import embedder
 from app.schemas.schemas import TransactionResponse, TransactionUpdate

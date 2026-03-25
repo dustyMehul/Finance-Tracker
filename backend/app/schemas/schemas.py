@@ -27,6 +27,15 @@ class ReviewStatusSchema(str, Enum):
     finalized = "finalized"
 
 
+class FinancialNatureSchema(str, Enum):
+    expense    = "expense"
+    income     = "income"
+    investment = "investment"
+    transfer   = "transfer"
+    lending    = "lending"
+    unknown    = "unknown"
+
+
 class UploadMetadata(BaseModel):
     bank: Optional[str] = None
     account_type: Optional[AccountTypeSchema] = None
@@ -65,6 +74,9 @@ class TransactionResponse(BaseModel):
     category_confidence: Optional[float] = None
     is_duplicate: bool
     is_return: bool
+    financial_nature: Optional[FinancialNatureSchema] = None
+    transfer_pair_id: Optional[str] = None
+    transfer_confirmed: bool = False
     review_status: ReviewStatusSchema
     user_note: Optional[str] = None
     created_at: datetime
@@ -78,12 +90,28 @@ class TransactionUpdate(BaseModel):
     review_status: Optional[ReviewStatusSchema] = None
     user_note: Optional[str] = None
     description: Optional[str] = None
+    financial_nature: Optional[FinancialNatureSchema] = None
+
+
+class TransferSuggestion(BaseModel):
+    """A suggested transfer pair — two transactions that likely cancel each other."""
+    txn_a: TransactionResponse   # the outflow (debit)
+    txn_b: TransactionResponse   # the inflow (credit)
+    amount: float
+    days_apart: int
+    confidence: float            # 1.0 = exact match, <1.0 = fuzzy
+
+
+class ConfirmTransfer(BaseModel):
+    txn_a_id: str
+    txn_b_id: str
 
 
 class LabelCreate(BaseModel):
     name: str
     slug: str
     color: Optional[str] = None
+    nature: str = "expense"    # defaults to expense when adding from Labels page
 
 
 class LabelResponse(BaseModel):
@@ -92,6 +120,7 @@ class LabelResponse(BaseModel):
     slug: str
     color: Optional[str] = None
     is_active: bool
+    nature: str
     created_at: datetime
 
     class Config:
@@ -102,3 +131,4 @@ class LabelUpdate(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
     is_active: Optional[bool] = None
+    nature: Optional[str] = None

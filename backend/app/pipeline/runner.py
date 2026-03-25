@@ -1,13 +1,3 @@
-"""
-pipeline/runner.py
-
-Orchestrates the pipeline steps in order.
-Each step receives the full PipelineContext, mutates it, and returns nothing.
-After all steps complete, transactions are bulk-inserted into the DB.
-
-To add a new step: instantiate it and append to STEPS.
-"""
-
 from sqlalchemy.orm import Session
 from datetime import date
 
@@ -15,19 +5,13 @@ from app.pipeline.context import PipelineContext
 from app.pipeline.steps.parser import ParserStep
 from app.pipeline.steps.enricher import EnricherStep
 from app.pipeline.steps.categorizer import CategorizerStep
-from app.db.models import Transaction, UploadJob, JobStatus
+from app.db.models import Transaction, UploadJob, JobStatus, FinancialNature
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 def run_pipeline(ctx: PipelineContext, db: Session) -> PipelineContext:
-    """
-    Run all pipeline steps against the given context.
-    On success: bulk-inserts transactions and marks job as done.
-    On failure: marks job as failed with error message.
-    """
-    # build steps here so categorizer gets the db session
     steps = [
         ParserStep(),
         EnricherStep(),
@@ -41,14 +25,10 @@ def run_pipeline(ctx: PipelineContext, db: Session) -> PipelineContext:
         step.run(ctx)
 
         if ctx.has_errors:
-            logger.error(
-                "Step %s produced errors for job %s: %s",
-                step, ctx.job_id, ctx.errors
-            )
+            logger.error("Step %s produced errors: %s", step, ctx.errors)
             _mark_job_failed(ctx.job_id, ctx.errors, db)
             return ctx
 
-    # all steps passed — persist to DB
     if not ctx.transactions:
         ctx.add_error("Pipeline completed but produced no transactions.")
         _mark_job_failed(ctx.job_id, ctx.errors, db)
@@ -80,23 +60,33 @@ def _insert_transactions(ctx: PipelineContext, db: Session) -> None:
                 logger.warning("Skipping transaction with invalid date: %s", txn_date)
                 continue
 
+        # resolve financial_nature to enum
+        nature_raw = t.get("financial_nature", "unknown")
+        try:
+            nature = FinancialNature(nature_raw)
+        except ValueError:
+            nature = FinancialNature.unknown
+
         rows.append(Transaction(
-            upload_job_id=t["upload_job_id"],
-            date=txn_date,
-            description_raw=t["description_raw"],
-            description=t["description"],
-            amount=t["amount"],
-            currency=t.get("currency", "INR"),
-            transaction_type=t["transaction_type"],
-            balance=t.get("balance"),
-            bank=t.get("bank"),
-            account_type=t.get("account_type"),
-            account_nickname=t.get("account_nickname"),
-            is_duplicate=t.get("is_duplicate", False),
-            is_return=t.get("is_return", False),
-            label_id=t.get("label_id"),
-            category_confidence=t.get("category_confidence"),
-            review_status=t.get("review_status", "pending"),
+            upload_job_id       = t["upload_job_id"],
+            date                = txn_date,
+            description_raw     = t["description_raw"],
+            description         = t["description"],
+            amount              = t["amount"],
+            currency            = t.get("currency", "INR"),
+            transaction_type    = t["transaction_type"],
+            balance             = t.get("balance"),
+            bank                = t.get("bank"),
+            account_type        = t.get("account_type"),
+            account_nickname    = t.get("account_nickname"),
+            is_duplicate        = t.get("is_duplicate", False),
+            is_return           = t.get("is_return", False),
+            financial_nature    = nature,
+            transfer_pair_id    = t.get("transfer_pair_id"),
+            transfer_confirmed  = t.get("transfer_confirmed", False),
+            label_id            = t.get("label_id"),
+            category_confidence = t.get("category_confidence"),
+            review_status       = t.get("review_status", "pending"),
         ))
 
     db.bulk_save_objects(rows)

@@ -1,7 +1,8 @@
-export type AccountType = "savings" | "current" | "credit" | "wallet"
-export type JobStatus = "pending" | "processing" | "done" | "failed" | "finalized"
-export type ReviewStatus = "pending" | "approved" | "edited" | "ignored" | "finalized"
+export type AccountType    = "savings" | "current" | "credit" | "wallet"
+export type JobStatus      = "pending" | "processing" | "done" | "failed" | "finalized"
+export type ReviewStatus   = "pending" | "approved" | "edited" | "ignored" | "finalized"
 export type TransactionType = "debit" | "credit"
+export type FinancialNature = "expense" | "income" | "investment" | "transfer" | "lending" | "unknown"
 
 export interface UploadJobResponse {
   job_id: string
@@ -32,6 +33,9 @@ export interface Transaction {
   category_confidence: number | null
   is_duplicate: boolean
   is_return: boolean
+  financial_nature: FinancialNature | null
+  transfer_pair_id: string | null
+  transfer_confirmed: boolean
   review_status: ReviewStatus
   user_note: string | null
   created_at: string
@@ -42,6 +46,15 @@ export interface TransactionUpdate {
   review_status?: ReviewStatus
   user_note?: string
   description?: string
+  financial_nature?: FinancialNature
+}
+
+export interface TransferSuggestion {
+  txn_a: Transaction
+  txn_b: Transaction
+  amount: number
+  days_apart: number
+  confidence: number
 }
 
 export interface Label {
@@ -50,6 +63,7 @@ export interface Label {
   slug: string
   color: string | null
   is_active: boolean
+  nature: string
   created_at: string
 }
 
