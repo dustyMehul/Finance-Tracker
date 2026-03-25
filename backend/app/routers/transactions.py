@@ -75,7 +75,7 @@ def update_transaction(
     new_nature = update.financial_nature or txn.financial_nature
     should_clear_label = (
         update.clear_label or
-        str(new_nature) in ("transfer", "unknown")
+        str(new_nature) in ("unknown",)  # transfer can have labels (cc_payment etc)
     )
     if should_clear_label:
         txn.label_id = None

@@ -24,7 +24,7 @@ const NATURE_COLORS: Record<string, { bg: string; color: string }> = {
 }
 
 // which natures have labels
-const NATURE_HAS_LABELS = new Set(["expense", "income", "investment", "lending"])
+const NATURE_HAS_LABELS = new Set(["expense", "income", "investment", "lending", "transfer"])
 
 const NATURE_OPTIONS = [
   { value: "expense",    label: "Expense" },
@@ -103,7 +103,7 @@ export default function Reconcile() {
     updateMutation.mutate({ id: txn.id, update: { review_status: status } })
   }
 
-  const NO_LABEL_NATURES = new Set(["transfer", "unknown"])
+  const NO_LABEL_NATURES = new Set(["unknown"])  // transfer CAN have labels (cc_payment, self_transfer, returns)
 
   function saveNote(txn: Transaction) {
     const resolvedNature = natureValue || txn.financial_nature || ""
@@ -263,7 +263,9 @@ export default function Reconcile() {
                               <tr>
                                 <td colSpan={8} style={{ padding: "2px 12px", background: "#F1EFE8", borderBottom: "0.5px solid #d3d1c7" }}>
                                   <span style={{ fontSize: 11, color: "#5F5E5A" }}>
-                                    ⚠ This transaction ({txn.financial_nature}) will not be counted in spend or income reports
+                                    ⚠ {txn.financial_nature === "transfer"
+                                      ? "Transfer — excluded from spend/income reports. Assign a label (e.g. Credit card bill payment) for your records."
+                                      : `This transaction (${txn.financial_nature}) will not be counted in spend or income reports`}
                                   </span>
                                 </td>
                               </tr>
