@@ -103,16 +103,24 @@ export default function Reconcile() {
     updateMutation.mutate({ id: txn.id, update: { review_status: status } })
   }
 
+  const NO_LABEL_NATURES = new Set(["transfer", "unknown"])
+
   function saveNote(txn: Transaction) {
+    const resolvedNature = natureValue || txn.financial_nature || ""
     const update: Parameters<typeof updateTransaction>[1] = {
       user_note: noteValue,
       review_status: "edited",
     }
-    if (labelValue && labelValue !== txn.label_id) {
-      update.label_id = labelValue
-    }
     if (natureValue && natureValue !== txn.financial_nature) {
       update.financial_nature = natureValue as any
+    }
+    // clear label if nature doesn't support labels, or if user explicitly cleared it
+    if (NO_LABEL_NATURES.has(resolvedNature)) {
+      update.clear_label = true
+    } else if (labelValue && labelValue !== txn.label_id) {
+      update.label_id = labelValue
+    } else if (!labelValue && txn.label_id) {
+      update.clear_label = true
     }
     updateMutation.mutate({ id: txn.id, update })
   }

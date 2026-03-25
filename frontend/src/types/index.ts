@@ -47,6 +47,7 @@ export interface TransactionUpdate {
   user_note?: string
   description?: string
   financial_nature?: FinancialNature
+  clear_label?: boolean
 }
 
 export interface TransferSuggestion {

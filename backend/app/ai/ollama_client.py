@@ -1,101 +1,127 @@
 """
 ai/ollama_client.py
 
-Transaction categorizer using Ollama.
-Uses a simple single-word response format for reliability with small models.
+Keyword rules + Ollama fallback for transaction categorization.
+
+IMPORTANT: keyword rule slugs must match slugs in seed_labels.py exactly.
+The categorizer validates that the returned slug matches the candidate_slugs
+for the transaction's financial_nature — so rules here must return the right
+slug for the right nature.
 """
 
 import httpx
-import json
 from app.core.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-# Keyword rules — applied BEFORE calling Ollama
-# Handles the most common Indian transaction patterns deterministically
+# ---------------------------------------------------------------------------
+# Keyword rules — first match wins, applied before Ollama
+# Slugs must match seed_labels.py exactly
+# ---------------------------------------------------------------------------
+
 KEYWORD_RULES: list[tuple[list[str], str]] = [
-    # credit card payment
-    (["CC PAYMENT", "CREDIT CARD PAYMENT", "BPPY", "BILLDESK CC",
-      "MYCARDS CC BILL PAY", "IB BILLPAY DR", "CC BILL PAY"], "cc_payment"),
-    # investments — Zerodha, NSE, BSE, mutual funds
-    (["ZERODHA", "NSE CLEARING", "BSE CLEARING", "INDIAN CLEARING CORP",
-      "ACH D- ZERODHA", "ACH D- INDIAN CLEARING",
-      "NSDL", "CDSL", "MUTUAL FUND", "MF ", "SIP ",
-      "GROWW", "KUVERA", "COIN BY ZERODHA", "SMALLCASE"], "investments"),
-    # utilities
-    (["PZELECTRICITY", "ELECTRICITY", "BESCOM", "MSEDCL", "TPDDL", "BSES"], "utilities"),
-    # mobile / internet
+    # ── expense: utilities ─────────────────────────────────────────────
+    (["PZELECTRICITY", "ELECTRICITY", "BESCOM", "MSEDCL",
+      "TPDDL", "BSES", "TORRENT POWER"], "utilities"),
+    # ── expense: mobile & internet ─────────────────────────────────────
     (["PZPOSTPAID", "PZRECHARGE", "AIRTEL", "JIOFIBER", "BSNL",
-      "VODAFONE", "VI ", "RECHARGE"], "mobile_internet"),
-    # insurance
-    (["PZINSURANCE", "INSURANCE", "LIC ", "LIC BILLDESK", "HDFC LIFE",
-      "ICICI PRU", "SBI LIFE", "STAR HEALTH", "TATA AIG"], "insurance"),
-    # fuel
+      "VODAFONE", "VI ", "RECHARGE NON BBPS", "RECHARGE"], "mobile_internet"),
+    # ── expense: insurance ─────────────────────────────────────────────
+    (["PZINSURANCE", "INSURANCE", "LIC ", "LIC BILLDESK",
+      "HDFC LIFE", "ICICI PRU", "SBI LIFE",
+      "STAR HEALTH", "TATA AIG"], "insurance"),
+    # ── expense: fuel ──────────────────────────────────────────────────
     (["BPCL", "HPCL", "IOCL", "INDIAN OIL", "PETROL",
       "BHARAT PETROLEUM", "NAYARA", "ESSAR OIL"], "fuel"),
-    # tax
+    # ── expense: tax ───────────────────────────────────────────────────
     (["CBDT", "INCOME TAX", "GST PAYMENT", "TDS PAYMENT"], "tax"),
-    # rent
-    (["RENT", "HOUSE RENT", "HRA "], "transfer"),
-    # groceries
-    (["AVENUE SUPERMARTS", "DMART", "BIGBASKET", "GROFERS", "BLINKIT",
-      "ZEPTO", "SWIGGY INSTAMART", "KIRANA", "GROCER"], "groceries"),
-    # food & dining
-    (["MCDONALDS", "MC DONALDS", "ZOMATO", "SWIGGY", "DOMINOS", "PIZZA",
-      "CAFE", "RESTAURANT", "DINING", "FOOD", "BISTRO", "SARJAPU",
-      "SCOTCH YARD", "HORTICULTU", "BHARATPE"], "food_dining"),
-    # travel & hotels
+    # ── expense: groceries ─────────────────────────────────────────────
+    (["AVENUE SUPERMARTS", "DMART", "BIGBASKET", "GROFERS",
+      "BLINKIT", "ZEPTO", "SWIGGY INSTAMART",
+      "KIRANA", "GROCER"], "groceries"),
+    # ── expense: food & dining ─────────────────────────────────────────
+    (["MCDONALDS", "MC DONALDS", "ZOMATO", "SWIGGY", "DOMINOS",
+      "PIZZA", "CAFE", "RESTAURANT", "DINING", "BISTRO",
+      "SARJAPU", "SCOTCH YARD", "HORTICULTU",
+      "RAW FOODS", "BHARATPE"], "food_dining"),
+    # ── expense: travel & hotels ───────────────────────────────────────
     (["LEMON TREE", "HOTEL", "MAKEMYTRIP", "IRCTC", "CLEARTRIP",
-      "GOIBIBO", "OYO", "AIRLINES", "INDIGO", "SPICEJET",
-      "ACH C- INDIAN RAILWAY"], "travel_hotels"),
-    # shopping
-    (["DECATHLON", "AMAZON", "FLIPKART", "MYNTRA", "AJIO", "NYKAA",
-      "GYFTR", "SMARTBUY", "PIXEL MOTORS", "BEARDO"], "shopping"),
-    # health
+      "GOIBIBO", "OYO", "AIRLINES", "INDIGO",
+      "SPICEJET", "ACH C- INDIAN RAILWAY"], "travel_hotels"),
+    # ── expense: shopping ──────────────────────────────────────────────
+    (["DECATHLON", "AMAZON", "FLIPKART", "MYNTRA", "AJIO",
+      "NYKAA", "GYFTR", "SMARTBUY",
+      "PIXEL MOTORS", "BEARDO"], "shopping"),
+    # ── expense: health & medical ──────────────────────────────────────
     (["PHARMACY", "HOSPITAL", "CLINIC", "APOLLO", "MEDPLUS",
       "NETMEDS", "1MG", "PRACTO"], "health_medical"),
-    # transport
+    # ── expense: transport ─────────────────────────────────────────────
     (["UBER", "OLA", "RAPIDO", "METRO", "NAMMA", "AUTO"], "transport"),
-    # transfers — UPI person-to-person, IMPS, NEFT, FT
-    (["IMPS-", "NEFT-", "FT- ", "ACH C-", "SWEEP-IN",
-      "INT. ON SWCR", "TPT-MONEY RETURN"], "transfer"),
+    # ── expense: rent ──────────────────────────────────────────────────
+    (["HOUSE RENT", "HRA ", "RENT PAYMENT"], "rent"),
+    # ── expense: education ─────────────────────────────────────────────
+    (["SCHOOL FEE", "COLLEGE FEE", "TUITION", "UDEMY",
+      "COURSERA", "UNACADEMY"], "education"),
+    # ── expense: entertainment ─────────────────────────────────────────
+    (["NETFLIX", "HOTSTAR", "PRIME VIDEO", "SPOTIFY",
+      "BOOKMYSHOW", "PVR", "INOX"], "entertainment"),
+    # ── investment: out (debit) ────────────────────────────────────────
+    (["ZERODHA", "GROWW", "KUVERA", "SMALLCASE", "COIN BY ZERODHA",
+      "NSE CLEARING", "BSE CLEARING", "INDIAN CLEARING CORP",
+      "ACH D- ZERODHA", "ACH D- INDIAN CLEARING",
+      "NSDL", "CDSL", "MUTUAL FUND", "MF-", "SIP-"], "investment_out"),
+    # ── investment: in (credit) ────────────────────────────────────────
+    # same keywords but direction handled by categorizer via txn_type
+    # ── income: salary ─────────────────────────────────────────────────
+    (["SALARY", "PAYROLL", "STIPEND"], "salary"),
+    # ── income: dividend ───────────────────────────────────────────────
+    (["DIVIDEND", "DIV CREDIT"], "dividend"),
+    # ── income: interest ───────────────────────────────────────────────
+    (["INTEREST CREDIT", "INTEREST EARNED",
+      "INT. ON SWCR", "SWEEP-IN"], "interest_earned"),
 ]
 
 
-def _keyword_match(description: str) -> str | None:
-    """Fast deterministic match before hitting Ollama."""
+def _keyword_match(description: str, candidate_slugs: list[str]) -> str | None:
+    """
+    Fast deterministic match — only returns a slug if it's in candidate_slugs.
+    This ensures we never assign an income label to an expense transaction etc.
+    """
+    logger.info("KEYWORD_MATCH called: desc='%s' candidates=%s", description[:40], candidate_slugs)
     desc_upper = description.upper()
     for keywords, slug in KEYWORD_RULES:
         if any(kw in desc_upper for kw in keywords):
-            return slug
+            if slug in candidate_slugs:
+                return slug
+            # slug matched but wrong nature — don't fall through to Ollama with it
+            # just return None and let Ollama try with the correct candidate list
+            return None
     return None
 
 
-def categorize(description: str, label_slugs: list[str]) -> tuple[str, float]:
+def categorize(description: str, candidate_slugs: list[str]) -> tuple[str, float]:
     """
-    Categorize a transaction description.
-    Tries keyword rules first, then falls back to Ollama.
-    Returns (category_slug, confidence).
+    Categorize a transaction description against a set of candidate slugs.
+    Tries keyword rules first, then Ollama.
+    Returns (slug, confidence).
     """
-    if not label_slugs:
-        return "other", 0.0
+    if not candidate_slugs:
+        return "", 0.0
 
     # fast path — keyword rules
-    keyword_slug = _keyword_match(description)
-    if keyword_slug and keyword_slug in label_slugs:
+    keyword_slug = _keyword_match(description, candidate_slugs)
+    if keyword_slug:
         logger.debug("Keyword match: '%s' → %s", description[:50], keyword_slug)
         return keyword_slug, 0.95
 
     # slow path — Ollama
-    return _ollama_categorize(description, label_slugs)
+    return _ollama_categorize(description, candidate_slugs)
 
 
-def _ollama_categorize(description: str, label_slugs: list[str]) -> tuple[str, float]:
-    """Call Ollama for transactions that didn't match any keyword rule."""
-
-    slugs_formatted = "\n".join(f"- {s}" for s in label_slugs)
+def _ollama_categorize(description: str, candidate_slugs: list[str]) -> tuple[str, float]:
+    slugs_formatted = "\n".join(f"- {s}" for s in candidate_slugs)
 
     prompt = f"""Which category best describes this bank transaction?
 
@@ -113,33 +139,26 @@ Your answer (one slug only):"""
                 "model": settings.ollama_model,
                 "prompt": prompt,
                 "stream": False,
-                "options": {
-                    "temperature": 0.0,
-                    "num_predict": 20,   # slug is short, no need for more
-                }
+                "options": {"temperature": 0.0, "num_predict": 20},
             },
             timeout=30.0,
         )
         response.raise_for_status()
         raw = response.json().get("response", "").strip().lower()
+        raw = raw.split("\n")[0].strip().strip("\"'.,;:")
 
-        # clean up — model might add punctuation or extra words
-        raw = raw.split("\n")[0].strip()
-        raw = raw.strip("\"'.,;:")
-
-        # find the first slug that appears in the response
-        for slug in label_slugs:
+        for slug in candidate_slugs:
             if slug in raw:
                 logger.debug("Ollama match: '%s' → %s", description[:50], slug)
                 return slug, 0.75
 
-        # if nothing matched, default to other
-        logger.warning("Ollama could not categorize: '%s' (raw: %s)", description[:50], raw[:40])
-        return "other", 0.0
+        logger.warning("Ollama could not categorize: '%s' (raw: %s)",
+                        description[:50], raw[:40])
+        return candidate_slugs[0] if candidate_slugs else "", 0.0
 
     except httpx.TimeoutException:
         logger.warning("Ollama timeout for: %s", description[:60])
-        return "other", 0.0
+        return "", 0.0
     except Exception as e:
         logger.error("Ollama call failed: %s", e)
-        return "other", 0.0
+        return "", 0.0

@@ -86,11 +86,12 @@ class TransactionResponse(BaseModel):
 
 
 class TransactionUpdate(BaseModel):
-    label_id: Optional[str] = None
+    label_id: Optional[str] = None           # set to "" to clear the label
     review_status: Optional[ReviewStatusSchema] = None
     user_note: Optional[str] = None
     description: Optional[str] = None
     financial_nature: Optional[FinancialNatureSchema] = None
+    clear_label: bool = False                # explicitly clear label_id to None
 
 
 class TransferSuggestion(BaseModel):

@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
 import DropZone from "../components/DropZone"
 import MetaForm, { type MetaValues } from "../components/MetaForm"
-import { uploadStatement } from "../api/client"
+import { uploadStatement, getTransferSuggestions } from "../api/client"
 
 interface FileEntry {
   file: File
@@ -23,6 +24,12 @@ export default function Upload() {
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [processing, setProcessing] = useState(false)
   const navigate = useNavigate()
+
+  const { data: transferSuggestions = [] } = useQuery({
+    queryKey: ["transfer-suggestions"],
+    queryFn: getTransferSuggestions,
+    refetchInterval: 10000,  // refresh every 10s after upload
+  })
 
   function addFiles(files: File[]) {
     const newEntries: FileEntry[] = files.map(f => ({
@@ -82,15 +89,46 @@ export default function Upload() {
 
   const allDone = entries.length > 0 && entries.every(e => e.status === "done")
   const hasPending = entries.some(e => e.status === "pending")
+  const pendingTransfers = transferSuggestions.length
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 1rem" }}>
-      <h1 style={{ fontSize: 20, fontWeight: 500, marginBottom: 4 }}>
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 2rem" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>
         Import statements
       </h1>
-      <p style={{ fontSize: 13, color: "#888780", marginBottom: 24, marginTop: 0 }}>
+      <p style={{ fontSize: 14, color: "#888780", marginBottom: 24, marginTop: 0 }}>
         Drop one or more bank statements to get started.
       </p>
+
+      {/* transfer awareness banner */}
+      {pendingTransfers > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "12px 16px", borderRadius: 10, marginBottom: 20,
+          background: "#EEEDFE", border: "0.5px solid #AFA9EC",
+        }}>
+          <span style={{ fontSize: 20 }}>🔗</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: "#3C3489" }}>
+              {pendingTransfers} transfer{pendingTransfers > 1 ? "s" : ""} need matching
+            </p>
+            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#534AB7" }}>
+              Some transactions may be internal moves (CC payments, refunds, account transfers).
+              Review them before reconciling to avoid double counting.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/transfers")}
+            style={{
+              padding: "7px 16px", borderRadius: 8, border: "none",
+              background: "#534AB7", color: "#fff", fontSize: 12,
+              fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap",
+            }}
+          >
+            Review transfers →
+          </button>
+        </div>
+      )}
 
       <DropZone onFiles={addFiles} />
 

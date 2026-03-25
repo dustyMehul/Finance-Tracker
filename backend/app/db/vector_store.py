@@ -24,8 +24,22 @@ _client: chromadb.Client | None = None
 _collection = None
 
 
+def reset_collection():
+    """Force re-initialize the collection — call after wiping chroma on disk."""
+    global _client, _collection
+    _client = None
+    _collection = None
+
+
 def _get_collection():
     global _client, _collection
+    if _collection is not None:
+        # verify it still exists on disk — if chroma was wiped, reinitialize
+        try:
+            _collection.count()
+        except Exception:
+            _client = None
+            _collection = None
     if _collection is not None:
         return _collection
 

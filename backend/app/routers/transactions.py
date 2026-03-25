@@ -65,9 +65,21 @@ def update_transaction(
         and update.label_id != txn.label_id
     )
 
-    # apply updates
+    # apply updates — exclude None but handle special cases below
     for field, value in update.model_dump(exclude_none=True).items():
+        if field == "clear_label":
+            continue
         setattr(txn, field, value)
+
+    # explicitly clear label when requested or when nature=transfer/unknown
+    new_nature = update.financial_nature or txn.financial_nature
+    should_clear_label = (
+        update.clear_label or
+        str(new_nature) in ("transfer", "unknown")
+    )
+    if should_clear_label:
+        txn.label_id = None
+        label_changed = False  # don't store to vector if clearing
 
     db.commit()
     db.refresh(txn)
