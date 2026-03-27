@@ -105,20 +105,28 @@ class CategorizerStep(PipelineStep):
         )
 
     def _categorize(self, description: str, candidate_slugs: list[str]) -> tuple[str, float]:
-        # query vector store first — only use result if slug is valid for this nature
+        # Step 1 — keyword rules (fast, deterministic, 0.95 confidence)
+        slug, confidence = ollama_client.categorize(description, candidate_slugs)
+        if confidence >= 0.95:
+            return slug, confidence
+
+        # Step 2 — vector store (manual corrections only, trusted data)
+        # Only fires if similarity >= 0.88 AND slug is valid for this nature
         embedding = embedder.embed(description)
         if embedding:
             result = vector_store.query(embedding)
             if result:
-                slug, similarity = result
-                if (similarity >= settings.min_confidence_score
-                        and slug in candidate_slugs
-                        and similarity >= 0.92):   # high bar — avoid cross-category pollution
-                    logger.debug("Vector hit: '%s' → %s (%.2f)", description[:40], slug, similarity)
-                    return slug, similarity
+                v_slug, similarity = result
+                if similarity >= 0.88 and v_slug in candidate_slugs:
+                    logger.debug(
+                        "Vector hit: '%s' → %s (%.3f)",
+                        description[:40], v_slug, similarity
+                    )
+                    return v_slug, round(similarity, 2)
 
-        # fall back to keyword rules + Ollama
-        # NOTE: we do NOT store to vector here — vector store only learns from
-        # manual corrections in the UI (routers/transactions.py PATCH endpoint)
-        slug, confidence = ollama_client.categorize(description, candidate_slugs)
+        # Step 3 — Ollama with descriptive prompt (0.75/0.70 confidence)
+        if not slug or confidence == 0.0:
+            fallback = "other" if "other" in candidate_slugs else                        candidate_slugs[0] if candidate_slugs else ""
+            return fallback, 0.5
+
         return slug, confidence
