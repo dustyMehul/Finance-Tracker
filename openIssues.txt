@@ -1,0 +1,6 @@
+- Transaction Labels
+    - Debit but then returned in few days
+    - Money returned from selling investments.
+- Labels
+    - income
+    - rent

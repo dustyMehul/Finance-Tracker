@@ -11,12 +11,46 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   finalized: { bg: "#EEEDFE", color: "#3C3489" },
 }
 
+// natures that are excluded from reports — rows get dimmed warning
+const EXCLUDED_NATURES = new Set(["transfer", "lending", "unknown"])
+
+const NATURE_COLORS: Record<string, { bg: string; color: string }> = {
+  expense:    { bg: "#FCEBEB", color: "#791F1F" },
+  income:     { bg: "#EAF3DE", color: "#27500A" },
+  transfer:   { bg: "#F1EFE8", color: "#5F5E5A" },
+  investment: { bg: "#E6F1FB", color: "#0C447C" },
+  lending:    { bg: "#FAEEDA", color: "#633806" },
+  unknown:    { bg: "#F1EFE8", color: "#444441" },
+}
+
+// which natures have labels
+const NATURE_HAS_LABELS = new Set(["expense", "income", "investment", "lending", "transfer"])
+
+const NATURE_OPTIONS = [
+  { value: "expense",    label: "Expense" },
+  { value: "income",     label: "Income" },
+  { value: "investment", label: "Investment" },
+  { value: "transfer",   label: "Transfer" },
+  { value: "lending",    label: "Lending" },
+  { value: "unknown",    label: "Unknown" },
+]
+
+function NatureBadge({ nature }: { nature: string | null }) {
+  const s = NATURE_COLORS[nature ?? "unknown"] ?? NATURE_COLORS.unknown
+  return (
+    <span style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 99, background: s.bg, color: s.color, whiteSpace: "nowrap" }}>
+      {nature ?? "unknown"}
+    </span>
+  )
+}
+
 export default function Reconcile() {
   const queryClient = useQueryClient()
   const [expandedJob, setExpandedJob] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [noteValue, setNoteValue] = useState("")
+  const [noteValue, setNoteValue]   = useState("")
   const [labelValue, setLabelValue] = useState<string>("")
+  const [natureValue, setNatureValue] = useState<string>("")
 
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ["jobs"],
@@ -69,13 +103,24 @@ export default function Reconcile() {
     updateMutation.mutate({ id: txn.id, update: { review_status: status } })
   }
 
+  const NO_LABEL_NATURES = new Set(["unknown"])  // transfer CAN have labels (cc_payment, self_transfer, returns)
+
   function saveNote(txn: Transaction) {
+    const resolvedNature = natureValue || txn.financial_nature || ""
     const update: Parameters<typeof updateTransaction>[1] = {
       user_note: noteValue,
       review_status: "edited",
     }
-    if (labelValue && labelValue !== txn.label_id) {
+    if (natureValue && natureValue !== txn.financial_nature) {
+      update.financial_nature = natureValue as any
+    }
+    // clear label if nature doesn't support labels, or if user explicitly cleared it
+    if (NO_LABEL_NATURES.has(resolvedNature)) {
+      update.clear_label = true
+    } else if (labelValue && labelValue !== txn.label_id) {
       update.label_id = labelValue
+    } else if (!labelValue && txn.label_id) {
+      update.clear_label = true
     }
     updateMutation.mutate({ id: txn.id, update })
   }
@@ -89,9 +134,9 @@ export default function Reconcile() {
   if (jobsLoading) return <div style={{ padding: "2rem", color: "#888780" }}>Loading…</div>
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1rem" }}>
-      <h1 style={{ fontSize: 20, fontWeight: 500, margin: "0 0 6px" }}>Reconcile</h1>
-      <p style={{ fontSize: 13, color: "#888780", margin: "0 0 28px" }}>
+    <div style={{ maxWidth: 1400, margin: "0 auto", padding: "2rem 2rem" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 500, margin: "0 0 6px" }}>Reconcile</h1>
+      <p style={{ fontSize: 14, color: "#888780", margin: "0 0 28px" }}>
         Review and finalize each imported statement.
         Finalized statements are locked and used in reports.
       </p>
@@ -192,13 +237,14 @@ export default function Reconcile() {
                 )}
 
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                     <thead>
                       <tr style={{ borderBottom: "0.5px solid #d3d1c7" }}>
-                        {["Date", "Description", "Amount", "Category", "Conf.", "Status", "Actions"].map(h => (
+                        {["Date", "Description", "Amount", "Nature", "Category", "Conf.", "Status", "Actions"].map(h => (
                           <th key={h} style={{
-                            padding: "8px 12px", textAlign: "left",
+                            padding: "10px 12px", textAlign: "left",
                             fontWeight: 500, color: "#888780", whiteSpace: "nowrap",
+                            fontSize: 13,
                           }}>{h}</th>
                         ))}
                       </tr>
@@ -212,6 +258,18 @@ export default function Reconcile() {
 
                         return (
                           <React.Fragment key={txn.id}>
+                            {/* highlight rows whose nature is excluded from reports */}
+                            {txn.financial_nature && EXCLUDED_NATURES.has(txn.financial_nature) && txn.review_status !== "ignored" && (
+                              <tr>
+                                <td colSpan={8} style={{ padding: "2px 12px", background: "#F1EFE8", borderBottom: "0.5px solid #d3d1c7" }}>
+                                  <span style={{ fontSize: 11, color: "#5F5E5A" }}>
+                                    ⚠ {txn.financial_nature === "transfer"
+                                      ? "Transfer — excluded from spend/income reports. Assign a label (e.g. Credit card bill payment) for your records."
+                                      : `This transaction (${txn.financial_nature}) will not be counted in spend or income reports`}
+                                  </span>
+                                </td>
+                              </tr>
+                            )}
                             <tr style={{
                               borderBottom: "0.5px solid #f1efe8",
                               opacity: txn.review_status === "ignored" ? 0.45 : 1,
@@ -240,6 +298,9 @@ export default function Reconcile() {
                                 color: txn.transaction_type === "credit" ? "#085041" : "#1a1a18",
                               }}>
                                 {txn.transaction_type === "credit" ? "+" : "−"} ₹{txn.amount.toLocaleString("en-IN")}
+                              </td>
+                              <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
+                                <NatureBadge nature={txn.financial_nature} />
                               </td>
                               <td style={{ padding: "10px 12px", whiteSpace: "nowrap" }}>
                                 {label ? (
@@ -277,45 +338,43 @@ export default function Reconcile() {
                                     setEditingId(isEditing ? null : txn.id)
                                     setNoteValue(txn.user_note ?? "")
                                     setLabelValue(txn.label_id ?? "")
+                                    setNatureValue(txn.financial_nature ?? "")
                                   }} />
                                 </div>
                               </td>
                             </tr>
                             {isEditing && (
                               <tr style={{ background: "#E6F1FB11" }}>
-                                <td colSpan={7} style={{ padding: "10px 12px" }}>
+                                <td colSpan={8} style={{ padding: "10px 12px" }}>
                                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                                    {/* category dropdown */}
-                                    <select
-                                      value={labelValue}
-                                      onChange={e => setLabelValue(e.target.value)}
-                                      style={{
-                                        padding: "6px 10px", borderRadius: 6,
-                                        border: "0.5px solid #d3d1c7", fontSize: 13,
-                                        background: "transparent", color: "inherit",
-                                        minWidth: 160,
-                                      }}
-                                    >
-                                      <option value="">— category —</option>
-                                      {labels.map(l => (
-                                        <option key={l.id} value={l.id}>{l.name}</option>
-                                      ))}
+                                    {/* nature dropdown */}
+                                    <select value={natureValue} onChange={e => {
+                                      setNatureValue(e.target.value)
+                                      setLabelValue("")
+                                    }}
+                                      style={{ padding: "6px 10px", borderRadius: 6, border: "0.5px solid #d3d1c7", fontSize: 13, background: "transparent", color: "inherit", minWidth: 140 }}>
+                                      <option value="">— nature —</option>
+                                      {NATURE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                     </select>
+                                    {/* category dropdown — only shown when nature supports labels */}
+                                    {(!natureValue || NATURE_HAS_LABELS.has(natureValue)) && (
+                                      <select value={labelValue} onChange={e => setLabelValue(e.target.value)}
+                                        style={{ padding: "6px 10px", borderRadius: 6, border: "0.5px solid #d3d1c7", fontSize: 13, background: "transparent", color: "inherit", minWidth: 160 }}>
+                                        <option value="">— category —</option>
+                                        {labels
+                                          .filter(l => !natureValue || l.nature === natureValue)
+                                          .map(l => <option key={l.id} value={l.id}>{l.name}</option>)
+                                        }
+                                      </select>
+                                    )}
+                                    {natureValue && !NATURE_HAS_LABELS.has(natureValue) && (
+                                      <span style={{ fontSize: 12, color: "#b4b2a9", fontStyle: "italic" }}>No labels for {natureValue}</span>
+                                    )}
                                     {/* note input */}
-                                    <input
-                                      autoFocus
-                                      type="text"
-                                      placeholder="Add a note… (optional)"
-                                      value={noteValue}
-                                      onChange={e => setNoteValue(e.target.value)}
+                                    <input autoFocus type="text" placeholder="Add a note… (optional)"
+                                      value={noteValue} onChange={e => setNoteValue(e.target.value)}
                                       onKeyDown={e => e.key === "Enter" && saveNote(txn)}
-                                      style={{
-                                        flex: 1, padding: "6px 10px", borderRadius: 6,
-                                        border: "0.5px solid #d3d1c7", fontSize: 13,
-                                        background: "transparent", color: "inherit",
-                                        minWidth: 160,
-                                      }}
-                                    />
+                                      style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "0.5px solid #d3d1c7", fontSize: 13, background: "transparent", color: "inherit", minWidth: 160 }} />
                                     <button onClick={() => saveNote(txn)} style={saveBtnStyle}>Save</button>
                                     <button onClick={() => setEditingId(null)} style={cancelBtnStyle}>Cancel</button>
                                   </div>

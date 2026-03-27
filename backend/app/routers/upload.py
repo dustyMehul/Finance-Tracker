@@ -21,6 +21,7 @@ from app.pipeline.context import PipelineContext
 from app.pipeline.runner import run_pipeline
 from app.schemas.schemas import UploadJobResponse, AccountTypeSchema
 from app.core.config import settings
+from app.core.backup import backup
 from app.core.logging import get_logger
 
 router = APIRouter(prefix="/upload", tags=["upload"])
@@ -152,6 +153,11 @@ def upload_statement(
     )
     ctx = run_pipeline(ctx, db)
     db.refresh(job)
+
+    # backup DB after every successful upload
+    if job.status == JobStatus.done:
+        backup(reason=f"post-upload: {job.original_filename}")
+
     return _job_response(job, db)
 
 
