@@ -11,8 +11,7 @@ from typing import Optional
 
 from app.db.database import get_db
 from app.db.models import Transaction, ReviewStatus, Label, FinancialNature
-from app.db import vector_store
-from app.ai import embedder
+from app.db import merchant_memory
 from app.schemas.schemas import TransactionResponse, TransactionUpdate
 from app.core.logging import get_logger
 
@@ -84,19 +83,22 @@ def update_transaction(
     db.commit()
     db.refresh(txn)
 
-    # --- teach the vector store about this manual correction ---
+    # --- teach merchant memory about this manual correction ---
     if label_changed and update.label_id:
         label = db.query(Label).filter(Label.id == update.label_id).first()
         if label:
-            description = txn.description or txn.description_raw
-            embedding = embedder.embed(description)
-            if embedding:
-                vector_store.store(description, label.slug, embedding)
+            description = txn.description or txn.description_raw or ""
+            key = merchant_memory.store_rule(
+                description   = description,
+                label_slug    = label.slug,
+                label_id      = label.id,
+                source_txn_id = txn.id,
+                db            = db,
+            )
+            if key:
                 logger.info(
-                    "Vector store updated: '%s' → %s (manual correction)",
-                    description[:50], label.slug
+                    "Merchant memory updated: '%s' -> %s (key: '%s')",
+                    description[:50], label.slug, key
                 )
-            else:
-                logger.warning("Could not embed '%s' for vector store", description[:50])
 
     return txn

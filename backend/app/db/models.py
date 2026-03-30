@@ -74,6 +74,30 @@ class UploadJob(Base):
     transactions      = relationship("Transaction", back_populates="upload_job")
 
 
+class MerchantRule(Base):
+    """
+    Learned merchant → label mappings from manual corrections.
+    Replaces ChromaDB vector store — deterministic, no ML, no thresholds.
+
+    merchant_key is extracted from the description (first meaningful words).
+    During import, if merchant_key is found anywhere in description → use label_slug.
+
+    Examples:
+      "UJAGAR SINGH SETHI" → fuel
+      "THIRD WAVE COFFEE"  → food_dining
+      "JAI SONS"           → groceries
+    """
+    __tablename__ = "merchant_rules"
+
+    id              = Column(String, primary_key=True, default=new_uuid)
+    merchant_key    = Column(String, nullable=False, unique=True)  # uppercase, 2-4 words
+    label_slug      = Column(String, nullable=False)
+    label_id        = Column(String, ForeignKey("labels.id"), nullable=True)
+    source_txn_id   = Column(String, nullable=True)  # which transaction created this rule
+    created_at      = Column(DateTime, server_default=func.now())
+    updated_at      = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
 class Label(Base):
     __tablename__ = "labels"
 

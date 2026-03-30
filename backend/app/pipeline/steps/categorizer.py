@@ -1,27 +1,25 @@
 """
 pipeline/steps/categorizer.py
 
-Assigns labels to transactions based on financial_nature.
-- transfer / unknown → no label ever
-- expense → expense labels only
-- income → income labels only
-- investment debit → investment_out labels only
-- investment credit → investment_in labels only
-- lending → lending labels only
+4-layer categorization pipeline:
+  1. Keyword rules  (0.95) — deterministic, known Indian merchant patterns
+  2. Merchant memory (0.90) — SQLite lookup from past manual corrections
+  3. Ollama          (0.75) — unknown merchants, descriptive prompt + examples
+  4. Fallback        (0.50) — "other" when nothing matches
+
+No ChromaDB, no embeddings, no similarity thresholds.
 """
 
 from sqlalchemy.orm import Session
 from app.pipeline.steps.base import PipelineStep
 from app.pipeline.context import PipelineContext
-from app.ai import ollama_client, embedder
-from app.db import vector_store
+from app.ai import ollama_client
+from app.db import merchant_memory
 from app.db.models import Label
-from app.core.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# natures that never get labels
 NO_LABEL_NATURES = {"transfer", "unknown"}
 
 
@@ -43,26 +41,28 @@ class CategorizerStep(PipelineStep):
 
         label_by_slug = {l.slug: l for l in labels}
 
-        # pre-group slugs by nature for fast lookup
+        # pre-group slugs by nature
         slugs_by_nature: dict[str, list[str]] = {}
         for l in labels:
             slugs_by_nature.setdefault(l.nature, []).append(l.slug)
 
         logger.info(
-            "Categorizing %d transactions, label groups: %s",
+            "Categorizing %d transactions | label groups: %s",
             len(ctx.transactions),
             {k: len(v) for k, v in slugs_by_nature.items()}
         )
 
-        vector_hits = 0
-        ollama_hits = 0
-        skipped     = 0
+        keyword_hits = 0
+        memory_hits  = 0
+        ollama_hits  = 0
+        fallback     = 0
+        skipped      = 0
 
         for txn in ctx.transactions:
             nature   = txn.get("financial_nature", "unknown")
             txn_type = txn.get("transaction_type", "debit")
 
-            # no labels for these natures
+            # transfer and unknown never get labels
             if nature in NO_LABEL_NATURES:
                 skipped += 1
                 continue
@@ -72,14 +72,12 @@ class CategorizerStep(PipelineStep):
                 skipped += 1
                 continue
 
-            # pick candidate slugs based on nature + direction
+            # build candidate slugs filtered by nature + direction
             if nature == "investment":
-                # debit = money out = investment_out label
-                # credit = money in = investment_in label
-                if txn_type == "debit":
-                    candidate_slugs = [s for s in slugs_by_nature.get("investment", []) if "out" in s]
-                else:
-                    candidate_slugs = [s for s in slugs_by_nature.get("investment", []) if "in" in s]
+                candidate_slugs = [
+                    s for s in slugs_by_nature.get("investment", [])
+                    if ("out" in s if txn_type == "debit" else "in" in s)
+                ]
             elif nature == "lending":
                 candidate_slugs = slugs_by_nature.get("lending", [])
             else:
@@ -89,44 +87,51 @@ class CategorizerStep(PipelineStep):
                 skipped += 1
                 continue
 
-            label_slug, confidence = self._categorize(description, candidate_slugs)
+            slug, confidence = self._categorize(
+                description, candidate_slugs, nature
+            )
 
-            if label_slug and label_slug in label_by_slug:
-                txn["label_id"]            = label_by_slug[label_slug].id
+            # track source
+            if confidence >= 0.95:
+                keyword_hits += 1
+            elif confidence >= 0.90:
+                memory_hits += 1
+            elif confidence >= 0.70:
+                ollama_hits += 1
+            else:
+                fallback += 1
+
+            if slug and slug in label_by_slug:
+                txn["label_id"]            = label_by_slug[slug].id
                 txn["category_confidence"] = confidence
-                logger.debug("Categorized '%s' → %s (%.0f%%)", description[:40], label_slug, confidence * 100)
-                if confidence >= settings.min_confidence_score:
-                    vector_hits += 1 if confidence == 1.0 else 0
-                    ollama_hits += 1 if confidence < 1.0 else 0
 
         logger.info(
-            "Categorization done — %d vector hits, %d ollama hits, %d skipped",
-            vector_hits, ollama_hits, skipped
+            "Categorization done — keyword=%d memory=%d ollama=%d fallback=%d skipped=%d",
+            keyword_hits, memory_hits, ollama_hits, fallback, skipped
         )
 
-    def _categorize(self, description: str, candidate_slugs: list[str]) -> tuple[str, float]:
-        # Step 1 — keyword rules (fast, deterministic, 0.95 confidence)
+    def _categorize(self, description: str, candidate_slugs: list[str],
+                    nature: str) -> tuple[str, float]:
+
+        # Layer 1 — keyword rules (fast, deterministic)
         slug, confidence = ollama_client.categorize(description, candidate_slugs)
         if confidence >= 0.95:
             return slug, confidence
 
-        # Step 2 — vector store (manual corrections only, trusted data)
-        # Only fires if similarity >= 0.88 AND slug is valid for this nature
-        embedding = embedder.embed(description)
-        if embedding:
-            result = vector_store.query(embedding)
-            if result:
-                v_slug, similarity = result
-                if similarity >= 0.88 and v_slug in candidate_slugs:
-                    logger.debug(
-                        "Vector hit: '%s' → %s (%.3f)",
-                        description[:40], v_slug, similarity
-                    )
-                    return v_slug, round(similarity, 2)
+        # Layer 2 — merchant memory (SQLite, from past corrections)
+        result = merchant_memory.find_match(description, self.db)
+        if result:
+            mem_slug, mem_conf = result
+            if mem_slug in candidate_slugs:
+                return mem_slug, mem_conf
+            # slug in memory doesn't match this nature — skip it
 
-        # Step 3 — Ollama with descriptive prompt (0.75/0.70 confidence)
-        if not slug or confidence == 0.0:
-            fallback = "other" if "other" in candidate_slugs else                        candidate_slugs[0] if candidate_slugs else ""
-            return fallback, 0.5
+        # Layer 3 — Ollama with descriptive prompt + examples
+        slug, confidence = ollama_client.categorize(description, candidate_slugs)
+        if slug and confidence >= 0.70:
+            return slug, confidence
 
-        return slug, confidence
+        # Layer 4 — fallback to "other"
+        fallback_slug = "other" if "other" in candidate_slugs else \
+                        candidate_slugs[0] if candidate_slugs else ""
+        return fallback_slug, 0.50
