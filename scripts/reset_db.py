@@ -41,14 +41,9 @@ def reset(confirmed: bool = False):
     Base.metadata.create_all(bind=engine)
     print("✓ SQL database reset.")
 
-    # --- wipe ChromaDB vector store ---
-    chroma_path = Path(settings.chroma_dir)
-    if chroma_path.exists():
-        shutil.rmtree(chroma_path)
-        chroma_path.mkdir(parents=True, exist_ok=True)
-        print("✓ ChromaDB vector store cleared.")
-    else:
-        print("  ChromaDB dir not found — skipping.")
+    # ChromaDB removed — merchant rules now stored in SQLite (merchant_rules table)
+    # No separate vector store to clear
+    print("✓ Merchant rules cleared (part of SQL DB reset).")
 
     print("\nDone. Run 'python scripts/seed_labels.py' to re-populate labels.")
 
