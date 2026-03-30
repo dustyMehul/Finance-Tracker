@@ -42,12 +42,17 @@ Open Terminal, navigate to the Finance Tracker folder, and run:
 bash install.sh
 ```
 
-The script will:
-- Check all prerequisites are installed
-- Set up the Python environment
+The installer will ask you a series of questions:
+- **Backend and frontend ports** — press Enter to accept the defaults (8000 / 5173)
+- **For each tool (Python, Node, Ollama):** whether it's already installed
+  - If yes: it auto-detects the path and asks you to confirm, or lets you enter a custom path
+  - If no: it shows the install command and offers to run it via Homebrew
+
+After answering, it will:
+- Set up the Python environment and install dependencies
 - Build the frontend
 - Download the AI models (~5.5 GB — this is the slow step, be patient)
-- Set up the database
+- Seed the database and generate a `start.sh` launcher
 
 ### 3. Start the app
 
@@ -96,7 +101,13 @@ Open PowerShell, navigate to the Finance Tracker folder, and run:
 .\install.ps1
 ```
 
-The script will handle everything — including downloading the AI models (~5.5 GB).
+The installer will ask you a series of questions:
+- **Backend and frontend ports** — press Enter to accept the defaults (8000 / 5173)
+- **For each tool (Python, Node, Ollama):** whether it's already installed
+  - If yes: it auto-detects the path and asks you to confirm, or lets you enter a custom path
+  - If no: it shows the download URL and offers to install via `winget`
+
+After answering, it handles everything — including downloading the AI models (~5.5 GB).
 
 ### 4. Start the app
 
