@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.db.database import get_db
-from app.db.models import UploadJob, JobStatus, Transaction, ReviewStatus
+from app.db.models import UploadJob, JobStatus, Transaction, ReviewStatus, Account
 from app.pipeline.context import PipelineContext
 from app.pipeline.runner import run_pipeline
 from app.schemas.schemas import UploadJobResponse, AccountTypeSchema
@@ -85,6 +85,7 @@ def list_jobs(db: Session = Depends(get_db)):
 @router.post("", response_model=UploadJobResponse)
 def upload_statement(
     file: UploadFile = File(...),
+    account_id: Optional[str] = Form(None),
     bank: Optional[str] = Form(None),
     account_type: Optional[AccountTypeSchema] = Form(None),
     account_nickname: Optional[str] = Form(None),
@@ -97,10 +98,20 @@ def upload_statement(
             detail=f"Unsupported file type '{suffix}'. Accepted: {', '.join(SUPPORTED_EXTENSIONS)}"
         )
 
+    # If account_id provided, populate metadata from the linked Account
+    if account_id:
+        acct = db.query(Account).filter(Account.id == account_id, Account.is_active == True).first()
+        if not acct:
+            raise HTTPException(status_code=404, detail="Account not found.")
+        bank = acct.bank
+        account_type = acct.account_type
+        account_nickname = acct.display_name
+
     job = UploadJob(
         original_filename=file.filename,
         file_path="",
         file_hash="",
+        account_id=account_id,
         bank=bank,
         account_type=account_type,
         account_nickname=account_nickname,

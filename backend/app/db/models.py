@@ -52,6 +52,21 @@ class FinancialNature(str, enum.Enum):
     unknown    = "unknown"      # not yet classified — excluded from reports
 
 
+class Account(Base):
+    __tablename__ = "accounts"
+
+    id            = Column(String, primary_key=True, default=new_uuid)
+    display_name  = Column(String, nullable=False, unique=True)  # e.g. "HDFC-Saving-4122"
+    bank          = Column(String, nullable=True)
+    account_type  = Column(SAEnum(AccountType), nullable=True)
+    last_4        = Column(String(4), nullable=True)
+    color         = Column(String, nullable=True)
+    is_active     = Column(Boolean, default=True)
+    created_at    = Column(DateTime, server_default=func.now())
+
+    upload_jobs   = relationship("UploadJob", back_populates="account")
+
+
 class UploadJob(Base):
     __tablename__ = "upload_jobs"
 
@@ -60,6 +75,7 @@ class UploadJob(Base):
     file_path         = Column(String, nullable=False)
     file_hash         = Column(String, nullable=False)
 
+    account_id        = Column(String, ForeignKey("accounts.id"), nullable=True)
     bank              = Column(String, nullable=True)
     account_type      = Column(SAEnum(AccountType), nullable=True)
     account_nickname  = Column(String, nullable=True)
@@ -71,6 +87,7 @@ class UploadJob(Base):
     created_at        = Column(DateTime, server_default=func.now())
     updated_at        = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    account           = relationship("Account", back_populates="upload_jobs")
     transactions      = relationship("Transaction", back_populates="upload_job")
 
 
