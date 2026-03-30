@@ -155,6 +155,12 @@ def get_summary(
         "liquidity":        round(liquidity, 2),
         # extras
         "unknown_count":    len(unknown_txns),
+        # investment breakdown
+        "investment_out":   round(total_invested, 2),
+        "investment_in":    round(sum(t.amount for t in inv_withdraw), 2),
+        # lending breakdown
+        "lending_out":      round(sum(t.amount for t in lending_out), 2),
+        "lending_in":       round(sum(t.amount for t in lending_in), 2),
         "lending_outstanding": round(
             sum(t.amount for t in lending_out) - sum(t.amount for t in lending_in), 2
         ),
@@ -166,12 +172,15 @@ def get_categories(
     period: str = Query("last_month"),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
+    account_type: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
     d_from, d_to = _date_range(period, date_from, date_to)
     txns = _base(db, d_from, d_to).all()
     # categories only shows expense nature — investment excluded intentionally
     spend_txns = [t for t in txns if t.financial_nature == FinancialNature.expense]
+    if account_type:
+        spend_txns = [t for t in spend_txns if t.account_type and t.account_type.value == account_type]
 
     buckets: dict = {}
     total = sum(t.amount for t in spend_txns)
@@ -355,6 +364,311 @@ def get_trend(
         if first_data is not None and last_data is not None:
             last_idx = len(result) - last_data
             result = result[first_data:last_idx]
+
+        return {"view": "annual", "items": result}
+
+
+EXPENSE_TRACKED_SLUGS = [
+    "entertainment", "food_dining", "fuel", "groceries",
+    "shopping", "subscription", "transport", "travel_hotels",
+]
+
+
+@router.get("/expense-trend")
+def get_expense_trend(
+    view: str = Query("monthly"),
+    account_type: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Expense trend — immune to period dropdown.
+    monthly: last 6 months including current
+    annual:  last 5 financial years (Apr–Mar)
+    Returns total spend + per-tracked-category breakdown per period.
+    """
+    from app.db.models import Label
+
+    today = date.today()
+
+    # build slug → display info map for tracked slugs
+    labels = db.query(Label).filter(Label.nature == FinancialNature.expense.value).all()
+    slug_info = {l.slug: {"name": l.name, "color": l.color} for l in labels}
+
+    if view == "monthly":
+        months = []
+        for i in range(5, -1, -1):
+            d = today.replace(day=1) - relativedelta(months=i)
+            months.append(d.strftime("%Y-%m"))
+
+        q = _base(db, date.fromisoformat(months[0] + "-01"), today).filter(
+            Transaction.financial_nature == FinancialNature.expense
+        )
+        if account_type:
+            q = q.filter(Transaction.account_type == account_type)
+        txns = q.all()
+
+        buckets: dict = {
+            m: {"key": m, "spend": 0.0, "has_data": False,
+                **{s: 0.0 for s in EXPENSE_TRACKED_SLUGS}}
+            for m in months
+        }
+
+        for t in txns:
+            key = t.date.strftime("%Y-%m")
+            if key in buckets:
+                buckets[key]["spend"] += t.amount
+                buckets[key]["has_data"] = True
+                if t.label and t.label.slug in EXPENSE_TRACKED_SLUGS:
+                    buckets[key][t.label.slug] += t.amount
+
+        result = []
+        for m in months:
+            b = buckets[m]
+            d = date.fromisoformat(b["key"] + "-01")
+            result.append({
+                "key":        b["key"],
+                "label":      d.strftime("%b"),
+                "spend":      round(b["spend"], 2),
+                "has_data":   b["has_data"],
+                "categories": {s: round(b[s], 2) for s in EXPENSE_TRACKED_SLUGS},
+            })
+
+        first_data = next((i for i, r in enumerate(result) if r["has_data"]), None)
+        last_data  = next((i for i, r in enumerate(reversed(result)) if r["has_data"]), None)
+        if first_data is not None and last_data is not None:
+            result = result[first_data: len(result) - last_data]
+
+        return {"view": "monthly", "items": result,
+                "tracked": EXPENSE_TRACKED_SLUGS, "slug_info": slug_info}
+
+    else:  # annual
+        current_fy_start = today.year if today.month >= 4 else today.year - 1
+        fy_list = list(range(current_fy_start - 4, current_fy_start + 1))
+
+        q = _base(db, date(fy_list[0], 4, 1), today).filter(
+            Transaction.financial_nature == FinancialNature.expense
+        )
+        if account_type:
+            q = q.filter(Transaction.account_type == account_type)
+        txns = q.all()
+
+        buckets = {
+            y: {"fy_start": y, "spend": 0.0, "has_data": False,
+                **{s: 0.0 for s in EXPENSE_TRACKED_SLUGS}}
+            for y in fy_list
+        }
+
+        for t in txns:
+            fy = t.date.year if t.date.month >= 4 else t.date.year - 1
+            if fy in buckets:
+                buckets[fy]["spend"] += t.amount
+                buckets[fy]["has_data"] = True
+                if t.label and t.label.slug in EXPENSE_TRACKED_SLUGS:
+                    buckets[fy][t.label.slug] += t.amount
+
+        result = []
+        for y in fy_list:
+            b = buckets[y]
+            result.append({
+                "key":        str(y),
+                "label":      f"FY{str(y + 1)[-2:]}",
+                "spend":      round(b["spend"], 2),
+                "has_data":   b["has_data"],
+                "categories": {s: round(b[s], 2) for s in EXPENSE_TRACKED_SLUGS},
+            })
+
+        first_data = next((i for i, r in enumerate(result) if r["has_data"]), None)
+        last_data  = next((i for i, r in enumerate(reversed(result)) if r["has_data"]), None)
+        if first_data is not None and last_data is not None:
+            result = result[first_data: len(result) - last_data]
+
+        return {"view": "annual", "items": result,
+                "tracked": EXPENSE_TRACKED_SLUGS, "slug_info": slug_info}
+
+
+@router.get("/investment-trend")
+def get_investment_trend(
+    view: str = Query("monthly"),
+    db: Session = Depends(get_db),
+):
+    """
+    Diverging investment trend — immune to period dropdown.
+    invested_out: investment debits (positive) — money going into investments
+    withdrawn:    investment credits (negative) — money coming back
+    """
+    today = date.today()
+
+    if view == "monthly":
+        months = []
+        for i in range(5, -1, -1):
+            d = today.replace(day=1) - relativedelta(months=i)
+            months.append(d.strftime("%Y-%m"))
+
+        txns = _base(db, date.fromisoformat(months[0] + "-01"), today).filter(
+            Transaction.financial_nature == FinancialNature.investment
+        ).all()
+
+        buckets: dict = {
+            m: {"key": m, "invested_out": 0.0, "withdrawn": 0.0, "has_data": False}
+            for m in months
+        }
+
+        for t in txns:
+            key = t.date.strftime("%Y-%m")
+            if key in buckets:
+                buckets[key]["has_data"] = True
+                if t.transaction_type == TransactionType.debit:
+                    buckets[key]["invested_out"] += t.amount
+                else:
+                    buckets[key]["withdrawn"] += t.amount
+
+        result = []
+        for m in months:
+            b = buckets[m]
+            d = date.fromisoformat(b["key"] + "-01")
+            result.append({
+                "key":          b["key"],
+                "label":        d.strftime("%b"),
+                "invested_out": round(b["invested_out"], 2),
+                "withdrawn":    round(b["withdrawn"], 2),
+                "has_data":     b["has_data"],
+            })
+
+        first_data = next((i for i, r in enumerate(result) if r["has_data"]), None)
+        last_data  = next((i for i, r in enumerate(reversed(result)) if r["has_data"]), None)
+        if first_data is not None and last_data is not None:
+            result = result[first_data: len(result) - last_data]
+
+        return {"view": "monthly", "items": result}
+
+    else:  # annual
+        current_fy_start = today.year if today.month >= 4 else today.year - 1
+        fy_list = list(range(current_fy_start - 4, current_fy_start + 1))
+
+        txns = _base(db, date(fy_list[0], 4, 1), today).filter(
+            Transaction.financial_nature == FinancialNature.investment
+        ).all()
+
+        buckets = {
+            y: {"fy_start": y, "invested_out": 0.0, "withdrawn": 0.0, "has_data": False}
+            for y in fy_list
+        }
+
+        for t in txns:
+            fy = t.date.year if t.date.month >= 4 else t.date.year - 1
+            if fy in buckets:
+                buckets[fy]["has_data"] = True
+                if t.transaction_type == TransactionType.debit:
+                    buckets[fy]["invested_out"] += t.amount
+                else:
+                    buckets[fy]["withdrawn"] += t.amount
+
+        result = []
+        for y in fy_list:
+            b = buckets[y]
+            result.append({
+                "key":          str(y),
+                "label":        f"FY{str(y + 1)[-2:]}",
+                "invested_out": round(b["invested_out"], 2),
+                "withdrawn":    round(b["withdrawn"], 2),
+                "has_data":     b["has_data"],
+            })
+
+        first_data = next((i for i, r in enumerate(result) if r["has_data"]), None)
+        last_data  = next((i for i, r in enumerate(reversed(result)) if r["has_data"]), None)
+        if first_data is not None and last_data is not None:
+            result = result[first_data: len(result) - last_data]
+
+        return {"view": "annual", "items": result}
+
+
+@router.get("/lending-trend")
+def get_lending_trend(
+    view: str = Query("monthly"),
+    db: Session = Depends(get_db),
+):
+    today = date.today()
+
+    if view == "monthly":
+        months = []
+        for i in range(5, -1, -1):
+            d = today.replace(day=1) - relativedelta(months=i)
+            months.append(d.strftime("%Y-%m"))
+
+        txns = _base(db, date.fromisoformat(months[0] + "-01"), today).filter(
+            Transaction.financial_nature == FinancialNature.lending
+        ).all()
+
+        buckets: dict = {
+            m: {"key": m, "lent_out": 0.0, "returned": 0.0, "has_data": False}
+            for m in months
+        }
+
+        for t in txns:
+            key = t.date.strftime("%Y-%m")
+            if key in buckets:
+                buckets[key]["has_data"] = True
+                if t.transaction_type == TransactionType.debit:
+                    buckets[key]["lent_out"] += t.amount
+                else:
+                    buckets[key]["returned"] += t.amount
+
+        result = []
+        for m in months:
+            b = buckets[m]
+            d = date.fromisoformat(b["key"] + "-01")
+            result.append({
+                "key":      b["key"],
+                "label":    d.strftime("%b"),
+                "lent_out": round(b["lent_out"], 2),
+                "returned": round(b["returned"], 2),
+                "has_data": b["has_data"],
+            })
+
+        first_data = next((i for i, r in enumerate(result) if r["has_data"]), None)
+        last_data  = next((i for i, r in enumerate(reversed(result)) if r["has_data"]), None)
+        if first_data is not None and last_data is not None:
+            result = result[first_data: len(result) - last_data]
+
+        return {"view": "monthly", "items": result}
+
+    else:  # annual
+        current_fy_start = today.year if today.month >= 4 else today.year - 1
+        fy_list = list(range(current_fy_start - 4, current_fy_start + 1))
+
+        txns = _base(db, date(fy_list[0], 4, 1), today).filter(
+            Transaction.financial_nature == FinancialNature.lending
+        ).all()
+
+        buckets = {
+            y: {"fy_start": y, "lent_out": 0.0, "returned": 0.0, "has_data": False}
+            for y in fy_list
+        }
+
+        for t in txns:
+            fy = t.date.year if t.date.month >= 4 else t.date.year - 1
+            if fy in buckets:
+                buckets[fy]["has_data"] = True
+                if t.transaction_type == TransactionType.debit:
+                    buckets[fy]["lent_out"] += t.amount
+                else:
+                    buckets[fy]["returned"] += t.amount
+
+        result = []
+        for y in fy_list:
+            b = buckets[y]
+            result.append({
+                "key":      str(y),
+                "label":    f"FY{str(y + 1)[-2:]}",
+                "lent_out": round(b["lent_out"], 2),
+                "returned": round(b["returned"], 2),
+                "has_data": b["has_data"],
+            })
+
+        first_data = next((i for i, r in enumerate(result) if r["has_data"]), None)
+        last_data  = next((i for i, r in enumerate(reversed(result)) if r["has_data"]), None)
+        if first_data is not None and last_data is not None:
+            result = result[first_data: len(result) - last_data]
 
         return {"view": "annual", "items": result}
 
