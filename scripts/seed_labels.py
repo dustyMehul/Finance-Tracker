@@ -29,6 +29,7 @@ LABELS = [
     {"name": "Tax",                 "slug": "tax",               "color": "#791F1F", "nature": "expense"},
     {"name": "Rent",                "slug": "rent",              "color": "#993C1D", "nature": "expense"},
     {"name": "Other expense",       "slug": "other",             "color": "#EF9F27", "nature": "expense"},
+    {"name": "ATM withdrawal",      "slug": "atm_withdrawal",    "color": "#F5C4B3", "nature": "expense"},
 
     # ── income: greens ────────────────────────────────────────────────────
     {"name": "Salary",              "slug": "salary",            "color": "#639922", "nature": "income"},

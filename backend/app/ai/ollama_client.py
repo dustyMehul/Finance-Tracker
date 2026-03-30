@@ -61,7 +61,11 @@ KEYWORD_RULES: list[tuple[list[str], str]] = [
     (["UBER", "OLA", "RAPIDO", "METRO", "NAMMA", "AUTO"], "transport"),
     # ── expense: rent ──────────────────────────────────────────────────
     (["HOUSE RENT", "HRA ", "RENT PAYMENT"], "rent"),
+<<<<<<< Updated upstream
     # ── expense: education ─────────────────────────────────────────────
+=======
+    (["ATW ", "ATM ", "ATM WITHDRAWAL", "CASH WITHDRAWAL"], "atm_withdrawal"),
+>>>>>>> Stashed changes
     (["SCHOOL FEE", "COLLEGE FEE", "TUITION", "UDEMY",
       "COURSERA", "UNACADEMY"], "education"),
     # ── expense: entertainment ─────────────────────────────────────────
@@ -83,6 +87,40 @@ KEYWORD_RULES: list[tuple[list[str], str]] = [
       "INT. ON SWCR", "SWEEP-IN"], "interest_earned"),
 ]
 
+<<<<<<< Updated upstream
+=======
+# Human-readable descriptions for Ollama prompt
+SLUG_DESCRIPTIONS: dict[str, str] = {
+    "food_dining":     "restaurants, cafes, food delivery, coffee shops (Zomato, Swiggy, McDonald's, Third Wave Coffee, Dineout)",
+    "groceries":       "supermarkets, grocery stores, kirana shops (DMart, BigBasket, Blinkit, Zepto, Loyal World)",
+    "transport":       "cab rides, auto, metro (Uber, Ola, Rapido)",
+    "fuel":            "petrol/diesel stations only (BPCL, HPCL, Indian Oil, Bharat Petroleum)",
+    "utilities":       "electricity, water, gas bills (BESCOM, MSEDCL, Tata Power)",
+    "mobile_internet": "mobile recharge, postpaid, broadband (Airtel, Jio, Vi, BSNL)",
+    "insurance":       "insurance premiums (LIC, HDFC Life, Star Health, PolicyBazaar)",
+    "shopping":        "retail, online shopping, clothing (Amazon, Flipkart, Decathlon, Myntra, Zudio, Max)",
+    "health_medical":  "hospitals, clinics, pharmacies, vets (Apollo, MedPlus, 1mg)",
+    "travel_hotels":   "hotels, flights, trains (MakeMyTrip, IRCTC, Lemon Tree)",
+    "entertainment":   "movies, streaming, events (Netflix, BookMyShow, PVR)",
+    "education":       "school fees, online courses (Udemy, Coursera, tuition)",
+    "tax":             "income tax, GST (CBDT, TDS)",
+    "rent":            "house or PG rent payments",
+    "other":           "anything that doesn't fit other categories",
+    "atm_withdrawal":  "ATM cash withdrawal (starts with ATW)",
+    "salary":          "monthly salary or payroll",
+    "dividend":        "dividend from stocks or mutual funds",
+    "interest_earned": "interest from savings account or FD",
+    "other_income":    "any other income",
+    "investment_out":  "money sent to invest (Zerodha, Groww, mutual fund purchase)",
+    "investment_in":   "money received from selling investments",
+    "lending_out":     "money lent to someone",
+    "lending_in":      "money returned by someone",
+    "cc_payment":      "credit card bill payment",
+    "self_transfer":   "transfer between your own accounts",
+    "returns":         "refund or reversal",
+}
+
+>>>>>>> Stashed changes
 
 def _keyword_match(description: str, candidate_slugs: list[str]) -> str | None:
     """
