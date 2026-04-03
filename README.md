@@ -1,117 +1,236 @@
-# Finance Tracker
+<div align="center">
 
-A local-first personal finance tracker. Ingests bank and credit card statements, enriches and deduplicates transactions, categorizes them using a local Ollama LLM, and provides a reconciliation UI and reports. Everything runs on your own machine — no cloud.
+# 💰 Finance Tracker
 
-## Repo Structure
+**A local-first personal finance tracker — no cloud, no subscriptions, no data leaving your machine.**
 
-```
-finance-tracker/
-├── frontend/                                # UI / frontend
-│   ├── src/
-│   │   ├── pages/                           # Route-level pages
-│   │   │   ├── Upload.tsx                   # File drop + per-file metadata form
-│   │   │   ├── Reconcile.tsx                # Review, edit, ignore transactions
-│   │   │   ├── Labels.tsx                   # Add/edit category label list
-│   │   │   └── Reports.tsx                  # Charts, summaries, export
-│   │   │
-│   │   ├── components/                      # Reusable UI components
-│   │   │   ├── DropZone.tsx                 # Drag-and-drop with file type validation
-│   │   │   ├── FileList.tsx                 # Per-file status: ready / dup / error
-│   │   │   ├── MetaForm.tsx                 # Bank, account type, nickname fields
-│   │   │   ├── TransactionTable.tsx         # Sortable, filterable, inline-edit table
-│   │   │   ├── CategoryBadge.tsx            # Label pill with LLM confidence score
-│   │   │   └── ReportChart.tsx              # Recharts wrapper for spend breakdowns
-│   │   │
-│   │   ├── api/
-│   │   │   └── client.ts                    # Typed fetch wrappers for backend routes
-│   │   │
-│   │   ├── types/
-│   │   │   └── index.ts                     # Transaction, Label, UploadJob, PipelineStatus
-│   │   │
-│   │   └── main.tsx                         # App entrypoint + router setup
-│   │
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── backend/                                 # API / backend
-│   ├── app/
-│   │   ├── main.py                          # FastAPI init, router mounting, CORS
-│   │   │
-│   │   ├── core/                            # Config / infra
-│   │   │   ├── config.py                    # BaseSettings: DB_PATH, OLLAMA_HOST, UPLOAD_DIR, LOG_LEVEL
-│   │   │   └── logging.py                   # Structured logger shared across modules
-│   │   │
-│   │   ├── routers/                         # API routes
-│   │   │   ├── upload.py                    # POST /upload -> trigger pipeline job
-│   │   │   ├── transactions.py              # GET / PATCH / DELETE /transactions
-│   │   │   ├── labels.py                    # GET / POST / PATCH / DELETE /labels
-│   │   │   └── reports.py                   # GET /reports with period/category aggregations
-│   │   │
-│   │   ├── pipeline/                        # Processing pipeline
-│   │   │   ├── steps/
-│   │   │   │   ├── base.py                  # PipelineStep ABC with .run(ctx)
-│   │   │   │   ├── parser.py                # CSV / PDF / OFX -> List[RawTransaction]
-│   │   │   │   ├── enricher.py              # Dedup, clean descriptions, flag returns
-│   │   │   │   └── categorizer.py           # Vector match first, Ollama fallback
-│   │   │   │
-│   │   │   ├── context.py                   # PipelineContext dataclass shared across steps
-│   │   │   ├── runner.py                    # Ordered STEPS list, iterates through ctx
-│   │   │   └── __init__.py                  # Exports run_pipeline(job_id)
-│   │   │
-│   │   ├── ai/                              # AI / Ollama integration
-│   │   │   ├── ollama_client.py             # Prompt templates + /api/generate calls
-│   │   │   └── embedder.py                  # Embeddings via Ollama or sentence-transformers
-│   │   │
-│   │   ├── db/                              # Storage layer
-│   │   │   ├── database.py                  # SQLAlchemy engine, session factory, get_db()
-│   │   │   ├── models.py                    # ORM models: Transaction, Label, UploadJob
-│   │   │   ├── vector_store.py              # ChromaDB upsert + similarity query
-│   │   │   └── migrations/                  # Alembic migrations
-│   │   │       ├── env.py
-│   │   │       ├── script.py.mako
-│   │   │       └── versions/
-│   │   │
-│   │   └── schemas/
-│   │       └── schemas.py                   # Pydantic request/response models
-│   │
-│   ├── requirements.txt
-│   └── pyproject.toml
-│
-├── data/                                    # Local storage (entire folder gitignored)
-│   ├── finance.db                           # SQLite database file
-│   ├── uploads/                             # Raw statement files saved on ingest
-│   └── chroma/                              # Persisted ChromaDB vector store
-│
-├── scripts/                                 # Dev utilities / setup scripts
-│   ├── seed_labels.py                       # Pre-populate default labels
-│   ├── reset_db.py                          # Wipe + recreate tables (dev only)
-│   └── test_parser.py                       # Smoke test for sample statement parsing
-│
-├── docker-compose.yml                       # Run backend + Ollama together
-├── .env.example                             # OLLAMA_HOST, DB_PATH, UPLOAD_DIR, LOG_LEVEL
-├── .gitignore                               # data/, __pycache__/, node_modules/, .env
-└── README.md
-```
+Ingest bank statements · Auto-categorize with local AI · Reconcile & report
 
-## Tech Stack
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
+[![Ollama](https://img.shields.io/badge/Ollama-local_AI-black?style=flat)](https://ollama.com)
+[![SQLite](https://img.shields.io/badge/SQLite-local_DB-003B57?style=flat&logo=sqlite&logoColor=white)](https://sqlite.org)
 
-- **Backend**: FastAPI, SQLAlchemy, Alembic, SQLite, ChromaDB, pydantic-settings
-- **AI**: Ollama (local LLM) — default model: `llama3`, embedding model: `nomic-embed-text`
-- **Frontend**: Vite + React + TypeScript, Recharts, TanStack Query, React Router
-- **Parsers**: pdfplumber (PDF), ofxparse (OFX/QIF), pandas + xlrd (XLS/CSV)
+</div>
 
-## Running Locally
+---
+
+## ✨ What it does
+
+| | Feature |
+|---|---|
+| 📥 | **Import** XLS, CSV, PDF, and OFX bank statements |
+| 🤖 | **Auto-categorize** using keyword rules → past corrections → local Ollama LLM |
+| ✅ | **Reconcile** — review, edit, approve, or ignore before locking in |
+| 🔄 | **Transfer detection** — auto-pairs account transfers and excludes them from reports |
+| 📊 | **Reports** — spend by category, income, investments, trends, top merchants |
+| 🗂️ | **Statements** — browse all uploads grouped by account |
+| 🏦 | **Accounts & Labels** — manage accounts with bank/card details, customize categories |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+> You need these three things installed before running setup.
+
+| Tool | Min Version | Install |
+|---|---|---|
+| 🐍 Python | 3.12+ | `brew install python@3.12` · [python.org](https://python.org/downloads) |
+| 🟩 Node.js | 18+ | `brew install node` · [nodejs.org](https://nodejs.org) |
+| 🦙 Ollama | any | `brew install ollama` · [ollama.com](https://ollama.com) |
+
+### 1. Run the installer
 
 ```bash
-# backend (run from backend/ directory)
-source venv/bin/activate
-uvicorn app.main:app --reload
+bash install.sh
+```
 
-# smoke test parser against a real file
+The installer walks you through everything interactively:
+
+```
+▶ Port configuration       choose backend + frontend ports
+▶ Python 3.12+             auto-detect or enter path
+▶ Node.js 18+              auto-detect or enter path
+▶ Ollama                   auto-detect or install via Homebrew
+▶ Python virtual env       created at ./venv
+▶ Backend dependencies     pip install from requirements.txt
+▶ Frontend build           npm install + npm run build
+▶ AI models (~5.5 GB)      pulls mistral + nomic-embed-text
+▶ Database seed            default labels pre-populated
+▶ Generates start.sh       your daily launcher
+```
+
+> ⏱️ The model download step can take 10–30 minutes on a typical connection.
+
+### 2. Launch every time
+
+```bash
+bash start.sh
+```
+
+| Service | URL |
+|---|---|
+| 🖥️ App (UI) | `http://localhost:5173` |
+| ⚙️ API | `http://localhost:8000` |
+| 📖 API Docs | `http://localhost:8000/docs` |
+
+Press `Ctrl+C` to stop everything.
+
+---
+
+## 📖 Using the App
+
+### Step 1 — Set up accounts
+
+> **Setup** (top right) → **Accounts** tab
+
+Add each bank account or card you'll be importing statements for. Fields:
+- Display name (e.g. `HDFC Savings`)
+- Bank, account type, last 4 digits
+- A color dot to distinguish accounts across the UI
+
+---
+
+### Step 2 — Import a statement
+
+> **Import** page → drag & drop a file
+
+Supported: `.xls` `.xlsx` `.csv` `.pdf` `.ofx`
+
+Once uploaded, the pipeline runs automatically:
+
+```
+Parse file → Deduplicate → Detect nature → Categorize
+                                              ↓
+                              keyword rules (0.95 confidence)
+                                              ↓
+                              vector store — your past corrections (0.88+)
+                                              ↓
+                              Ollama LLM — mistral (0.70–0.75)
+```
+
+---
+
+### Step 3 — Reconcile
+
+> **Reconcile** page → review each transaction
+
+| Action | What it does |
+|---|---|
+| ✅ Approve | Accept the auto-assigned category |
+| ✏️ Edit | Change the nature and/or label |
+| 🚫 Ignore | Exclude from reports |
+| 🔒 Finalize | Lock the entire statement (requires 0 pending) |
+
+> **Tip:** Manual corrections teach the AI — the same merchant will auto-categorize correctly in future imports.
+
+---
+
+### Step 4 — Confirm transfers
+
+> **Transfers** page → review suggested pairs
+
+The app finds transactions with the same amount within ±3 days across accounts. Confirm a pair to link them and exclude both sides from reports.
+
+---
+
+### Step 5 — Reports
+
+> **Reports** page → tabbed dashboard
+
+| Tab | Shows |
+|---|---|
+| Overview | Net cash flow, income vs spend |
+| Categories | Expense breakdown by label — click a label to see transactions |
+| Trends | Monthly spend over time |
+| Merchants | Top merchants by spend |
+| Investments | Cash in/out for investments |
+| Money Lent | Lending tracker |
+
+---
+
+## 🛠️ Dev & Reset
+
+### Everyday restarts
+
+```bash
+# Keep all data — just restart the server
+bash scripts/restart.sh --no-reset
+
+# Full wipe — reset DB, vector store, re-seed labels
+bash scripts/restart.sh
+```
+
+> ⚠️ Always stop uvicorn before resetting. ChromaDB holds an in-memory singleton — resetting while it's running leaves stale embeddings.
+
+### Manual full reset
+
+```bash
+# 1. Stop uvicorn (Ctrl+C)
+rm -rf backend/data/chroma/ && mkdir backend/data/chroma/
+python scripts/reset_db.py --confirm
+python scripts/seed_labels.py
+
+# 2. Restart
+bash scripts/restart.sh --no-reset
+```
+
+### Useful scripts
+
+```bash
+# Smoke test the parser on a real file
 python scripts/test_parser.py path/to/statement.xls
 
-# frontend (once scaffolded)
-cd frontend
-npm run dev
+# Verify keyword rules match DB labels
+python scripts/test_categorizer.py
+
+# Manual DB backup / restore
+python scripts/backup_db.py
+python scripts/restore_db.py
+```
+
+---
+
+## 🗂️ Repo Structure
+
+```
+Finance-Tracker/
+├── 📁 backend/
+│   ├── app/
+│   │   ├── main.py              # FastAPI entry point
+│   │   ├── core/                # Config, logging, backup
+│   │   ├── db/                  # ORM models, SQLite, ChromaDB vector store
+│   │   ├── routers/             # upload · transactions · labels · reports · transfers
+│   │   ├── pipeline/            # parser → enricher → categorizer
+│   │   ├── ai/                  # Ollama client + embedder
+│   │   └── schemas/             # Pydantic request/response models
+│   ├── data/                    # Gitignored — DB, uploads, vector store, backups
+│   └── requirements.txt
+│
+├── 📁 frontend/
+│   └── src/
+│       ├── pages/               # Upload · Reconcile · Transfers · Statements · Reports
+│       ├── components/          # TransactionDrawer, shared UI
+│       ├── api/client.ts        # Typed API wrappers
+│       └── types/index.ts       # Shared TypeScript types
+│
+├── 📁 scripts/                  # seed · reset · backup · restore · smoke tests
+├── install.sh                   # ← Run this first
+├── start.sh                     # ← Run this daily (generated by install.sh)
+└── CLAUDE.md                    # Project context for AI-assisted development
+```
+
+---
+
+## ⚙️ Tech Stack
+
+```
+Frontend    Vite + React + TypeScript · Recharts · TanStack Query · React Router
+Backend     FastAPI · SQLAlchemy · SQLite · ChromaDB · pydantic-settings
+AI          Ollama (local) — mistral 7B for categorization
+                           — nomic-embed-text for vector embeddings
+Parsers     pdfplumber · ofxparse · pandas + xlrd
 ```
