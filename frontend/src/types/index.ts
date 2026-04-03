@@ -8,6 +8,7 @@ export interface UploadJobResponse {
   job_id: string
   filename: string
   status: JobStatus
+  account_id: string | null
   transaction_count: number | null
   duplicate_count: number | null
   pending_count: number | null

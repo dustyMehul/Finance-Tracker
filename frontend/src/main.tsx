@@ -7,6 +7,7 @@ import Reconcile from "./pages/Reconcile"
 import Labels from "./pages/Labels"
 import Reports from "./pages/Reports"
 import Transfers from "./pages/Transfers"
+import Statements from "./pages/Statements"
 import SetupModal from "./pages/SetupModal"
 
 const queryClient = new QueryClient()
@@ -26,10 +27,11 @@ function App() {
     <BrowserRouter>
       <div style={{ borderBottom: "0.5px solid #d3d1c7", padding: "14px 32px", display: "flex", gap: 28, alignItems: "center" }}>
         <span style={{ fontWeight: 600, fontSize: 16, marginRight: 8 }}>Finance Tracker</span>
-        <NavLink to="/"           style={({ isActive }) => navStyle(isActive)}>Import</NavLink>
-        <NavLink to="/reconcile"  style={({ isActive }) => navStyle(isActive)}>Reconcile</NavLink>
-        <NavLink to="/transfers"  style={({ isActive }) => navStyle(isActive)}>Transfers</NavLink>
-        <NavLink to="/reports"    style={({ isActive }) => navStyle(isActive)}>Reports</NavLink>
+        <NavLink to="/"            style={({ isActive }) => navStyle(isActive)}>Import</NavLink>
+        <NavLink to="/reconcile"   style={({ isActive }) => navStyle(isActive)}>Reconcile</NavLink>
+        <NavLink to="/transfers"   style={({ isActive }) => navStyle(isActive)}>Transfers</NavLink>
+        <NavLink to="/statements"  style={({ isActive }) => navStyle(isActive)}>Statements</NavLink>
+        <NavLink to="/reports"     style={({ isActive }) => navStyle(isActive)}>Reports</NavLink>
         <div style={{ marginLeft: "auto" }}>
           <button
             onClick={() => setSetupOpen(true)}
@@ -46,9 +48,10 @@ function App() {
       <Routes>
         <Route path="/"           element={<Upload onOpenAccounts={() => setSetupOpen(true)} />} />
         <Route path="/reconcile"  element={<Reconcile />} />
-        <Route path="/transfers"  element={<Transfers />} />
-        <Route path="/labels"     element={<Labels />} />
-        <Route path="/reports"    element={<Reports />} />
+        <Route path="/transfers"   element={<Transfers />} />
+        <Route path="/statements"  element={<Statements />} />
+        <Route path="/labels"      element={<Labels />} />
+        <Route path="/reports"     element={<Reports />} />
       </Routes>
       <SetupModal open={setupOpen} onClose={() => setSetupOpen(false)} />
     </BrowserRouter>

@@ -46,6 +46,7 @@ class UploadJobResponse(BaseModel):
     job_id: str
     filename: str
     status: JobStatusSchema
+    account_id: Optional[str] = None
     transaction_count: Optional[int] = None
     duplicate_count: Optional[int] = None
     pending_count: Optional[int] = None

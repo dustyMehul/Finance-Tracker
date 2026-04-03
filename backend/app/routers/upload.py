@@ -62,6 +62,7 @@ def _job_response(job: UploadJob, db: Session) -> UploadJobResponse:
         job_id=job.id,
         filename=job.original_filename,
         status=job.status,
+        account_id=job.account_id,
         transaction_count=transaction_count,
         duplicate_count=duplicate_count,
         pending_count=pending_count,
