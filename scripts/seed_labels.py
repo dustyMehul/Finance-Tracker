@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
 
+from app.core.config import settings
 from app.db.database import SessionLocal, create_tables
 from app.db.models import Label
 from sqlalchemy import func
@@ -53,6 +54,7 @@ LABELS = [
 
 
 def seed():
+    settings.ensure_dirs()
     create_tables()
     db = SessionLocal()
     added = 0
