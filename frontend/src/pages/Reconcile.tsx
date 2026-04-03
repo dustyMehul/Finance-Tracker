@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getTransactions, getLabels, getJobs, updateTransaction, finalizeJob } from "../api/client"
-import type { Transaction, ReviewStatus, UploadJobResponse } from "../types"
+import type { Transaction, ReviewStatus } from "../types"
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   pending:   { bg: "#FAEEDA", color: "#633806" },
