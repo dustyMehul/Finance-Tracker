@@ -119,15 +119,17 @@ function JobTransactions({ jobId, labelMap }: { jobId: string; labelMap: Map<str
 }
 
 // ── Single job row (collapsible) ───────────────────────────────────────────
-function JobRow({ job, labelMap }: { job: UploadJobResponse; labelMap: Map<string, Label> }) {
-  const [expanded, setExpanded] = useState(false)
+function JobRow({ job, labelMap, expanded, onToggle }: {
+  job: UploadJobResponse; labelMap: Map<string, Label>
+  expanded: boolean; onToggle: () => void
+}) {
   const s = STATUS_STYLE[job.status] ?? { bg: "#f3f4f6", color: "#444" }
 
   return (
     <div>
       {/* header row — click to expand */}
       <div
-        onClick={() => setExpanded(v => !v)}
+        onClick={onToggle}
         style={{
           display: "flex", alignItems: "center", gap: 12,
           padding: "10px 16px", borderBottom: expanded ? "none" : "0.5px solid #f3f1e9",
@@ -180,10 +182,12 @@ function JobRow({ job, labelMap }: { job: UploadJobResponse; labelMap: Map<strin
 }
 
 // ── Account section ────────────────────────────────────────────────────────
-function AccountSection({ account, jobs, labelMap }: {
+function AccountSection({ account, jobs, labelMap, expandedJobId, onToggle }: {
   account: Account | null
   jobs: UploadJobResponse[]
   labelMap: Map<string, Label>
+  expandedJobId: string | null
+  onToggle: (id: string) => void
 }) {
   const color = account?.color ?? "#9ca3af"
   const meta = account
@@ -209,7 +213,7 @@ function AccountSection({ account, jobs, labelMap }: {
         {jobs.length === 0 ? (
           <div style={{ padding: "14px 16px", fontSize: 13, color: "#888780" }}>No files uploaded yet.</div>
         ) : (
-          jobs.map(j => <JobRow key={j.job_id} job={j} labelMap={labelMap} />)
+          jobs.map(j => <JobRow key={j.job_id} job={j} labelMap={labelMap} expanded={expandedJobId === j.job_id} onToggle={() => onToggle(j.job_id)} />)
         )}
       </div>
     </div>
@@ -218,6 +222,12 @@ function AccountSection({ account, jobs, labelMap }: {
 
 // ── Page ───────────────────────────────────────────────────────────────────
 export default function Statements() {
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null)
+
+  function handleToggle(id: string) {
+    setExpandedJobId(prev => prev === id ? null : id)
+  }
+
   const { data: accounts = [], isLoading: loadingAccounts } = useQuery<Account[]>({
     queryKey: ["accounts"], queryFn: getAccounts,
   })
@@ -260,11 +270,13 @@ export default function Statements() {
           account={account}
           jobs={jobsByAccount.get(account.id) ?? []}
           labelMap={labelMap}
+          expandedJobId={expandedJobId}
+          onToggle={handleToggle}
         />
       ))}
 
       {unassigned.length > 0 && (
-        <AccountSection account={null} jobs={unassigned} labelMap={labelMap} />
+        <AccountSection account={null} jobs={unassigned} labelMap={labelMap} expandedJobId={expandedJobId} onToggle={handleToggle} />
       )}
     </div>
   )
