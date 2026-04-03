@@ -2,9 +2,10 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import axios from "axios"
 import {
-  PieChart, Pie, Tooltip as RTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Tooltip as RTooltip, ResponsiveContainer,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
 } from "recharts"
+import TransactionDrawer from "../components/TransactionDrawer"
 
 const api = axios.create({ baseURL: "http://localhost:8000" })
 
@@ -255,6 +256,7 @@ function ExpensesTooltip({ active, payload, label, activeKey }: any) {
 function ExpensesTab({ period, accountType }: { period: string; accountType?: string }) {
   const [trendView, setTrendView] = useState<"monthly" | "annual">("monthly")
   const [activeKey, setActiveKey] = useState<string>("spend")
+  const [drawer, setDrawer] = useState<{ labelId: string; name: string; color: string } | null>(null)
 
   const atParam = accountType ? `&account_type=${accountType}` : ""
 
@@ -321,7 +323,14 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
                     dataKey="value"
                     strokeWidth={1.5}
                     stroke="#fff"
-                  />
+                    style={{ cursor: "pointer" }}
+                    onClick={(slice: any) => {
+                      const cat = allCats.find((c: any) => c.label_name === slice.name)
+                      if (cat?.label_id) setDrawer({ labelId: cat.label_id, name: cat.label_name, color: cat.color || "#d3d1c7" })
+                    }}
+                  >
+                    {donutData.map((d: any, i: number) => <Cell key={i} fill={d.fill} />)}
+                  </Pie>
                   <RTooltip
                     formatter={(value, name) => [fmt(Number(value ?? 0)), String(name)]}
                     contentStyle={{ fontSize: 12, borderRadius: 8, border: "0.5px solid #d3d1c7" }}
@@ -341,20 +350,39 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
 
             {/* legend */}
             <div style={{ width: "100%", marginTop: 12 }}>
-              {donutData.map((d: any) => (
-                <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: d.fill, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: "#444441", flex: 1 }}>{d.name}</span>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: "#1a1a18" }}>{fmt(d.value)}</span>
-                  <span style={{ fontSize: 11, color: "#888780", width: 36, textAlign: "right" }}>
-                    {Math.round((d.value / totalExp) * 100)}%
-                  </span>
-                </div>
-              ))}
+              {donutData.map((d: any) => {
+                const cat = allCats.find((c: any) => c.label_name === d.name)
+                return (
+                  <div
+                    key={d.name}
+                    onClick={() => { if (cat?.label_id) setDrawer({ labelId: cat.label_id, name: d.name, color: d.fill }) }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, cursor: cat?.label_id ? "pointer" : "default", borderRadius: 6, padding: "2px 4px", transition: "background 0.1s" }}
+                    onMouseEnter={e => { if (cat?.label_id) (e.currentTarget as HTMLElement).style.background = "#f8f7f4" }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}
+                  >
+                    <div style={{ width: 10, height: 10, borderRadius: 2, background: d.fill, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: "#444441", flex: 1 }}>{d.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: "#1a1a18" }}>{fmt(d.value)}</span>
+                    <span style={{ fontSize: 11, color: "#888780", width: 36, textAlign: "right" }}>
+                      {Math.round((d.value / totalExp) * 100)}%
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
       </div>
+
+      {drawer && (
+        <TransactionDrawer
+          open={true}
+          onClose={() => setDrawer(null)}
+          title={drawer.name}
+          color={drawer.color}
+          labelId={drawer.labelId}
+        />
+      )}
 
       {/* ── Right: trend + category lines ── */}
       <div>
@@ -435,6 +463,7 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
 function MoneyLentTab({ summary }: { summary: any }) {
   const [view, setView] = useState<"monthly" | "annual">("monthly")
   const [hoveredSeries, setHoveredSeries] = useState<"lent_out" | "returned" | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const { data } = useQuery({
     queryKey: ["lending-trend", view],
@@ -523,13 +552,23 @@ function MoneyLentTab({ summary }: { summary: any }) {
 
   return (
     <div>
+      {drawerOpen && (
+        <TransactionDrawer
+          open={true}
+          onClose={() => setDrawerOpen(false)}
+          title="Money lent"
+          color="#BA7517"
+          financialNature="lending"
+        />
+      )}
+
       {/* 3 summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 28 }}>
-        <SummaryCard label="Money received" sublabel="Returned to you" value={fmt(summary?.lending_in ?? 0)} valueColor="#1D9E75" count="" />
-        <SummaryCard label="Money sent" sublabel="Lent out" value={fmt(summary?.lending_out ?? 0)} valueColor="#E24B4A" count="" />
+        <SummaryCard label="Money received" sublabel="Returned to you" value={fmt(summary?.lending_in ?? 0)} valueColor="#1D9E75" count="" onClick={() => setDrawerOpen(true)} />
+        <SummaryCard label="Money sent" sublabel="Lent out" value={fmt(summary?.lending_out ?? 0)} valueColor="#E24B4A" count="" onClick={() => setDrawerOpen(true)} />
         {(() => {
           const net = (summary?.lending_in ?? 0) - (summary?.lending_out ?? 0)
-          return <SummaryCard label="Net" sublabel="Received − Sent" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#1D9E75" : "#E24B4A"} count="" />
+          return <SummaryCard label="Net" sublabel="Received − Sent" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#1D9E75" : "#E24B4A"} count="" onClick={() => setDrawerOpen(true)} />
         })()}
       </div>
 
@@ -628,6 +667,7 @@ function MoneyLentTab({ summary }: { summary: any }) {
 function InvestmentsTab({ summary }: { summary: any }) {
   const [view, setView] = useState<"monthly" | "annual">("monthly")
   const [hoveredSeries, setHoveredSeries] = useState<"invested_out" | "withdrawn" | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const { data } = useQuery({
     queryKey: ["investment-trend", view],
@@ -717,13 +757,23 @@ function InvestmentsTab({ summary }: { summary: any }) {
 
   return (
     <div>
+      {drawerOpen && (
+        <TransactionDrawer
+          open={true}
+          onClose={() => setDrawerOpen(false)}
+          title="Investments"
+          color="#185FA5"
+          financialNature="investment"
+        />
+      )}
+
       {/* 3 summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 28 }}>
-        <SummaryCard label="Investments" sublabel="Money put in" value={fmt(summary?.investment_out ?? 0)} valueColor="#1D9E75" count="" />
-        <SummaryCard label="Withdrawals" sublabel="Money taken out" value={fmt(summary?.investment_in ?? 0)} valueColor="#E24B4A" count="" />
+        <SummaryCard label="Investments" sublabel="Money put in" value={fmt(summary?.investment_out ?? 0)} valueColor="#1D9E75" count="" onClick={() => setDrawerOpen(true)} />
+        <SummaryCard label="Withdrawals" sublabel="Money taken out" value={fmt(summary?.investment_in ?? 0)} valueColor="#E24B4A" count="" onClick={() => setDrawerOpen(true)} />
         {(() => {
           const net = (summary?.investment_out ?? 0) - (summary?.investment_in ?? 0)
-          return <SummaryCard label="Net" sublabel="Invested − Withdrawn" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#1D9E75" : "#E24B4A"} count="" />
+          return <SummaryCard label="Net" sublabel="Invested − Withdrawn" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#1D9E75" : "#E24B4A"} count="" onClick={() => setDrawerOpen(true)} />
         })()}
       </div>
 
@@ -954,14 +1004,21 @@ function TrendChart({ items }: { items: any[] }) {
   )
 }
 
-function SummaryCard({ label, sublabel, value, valueColor, count }: {
-  label: string; sublabel: string; value: string; valueColor: string; count: string
+function SummaryCard({ label, sublabel, value, valueColor, count, onClick }: {
+  label: string; sublabel: string; value: string; valueColor: string; count: string; onClick?: () => void
 }) {
   return (
-    <div style={{
-      background: "var(--color-background-secondary, #f5f4f0)",
-      borderRadius: 12, padding: "18px 20px",
-    }}>
+    <div
+      onClick={onClick}
+      style={{
+        background: "var(--color-background-secondary, #f5f4f0)",
+        borderRadius: 12, padding: "18px 20px",
+        cursor: onClick ? "pointer" : "default",
+        transition: "opacity 0.1s",
+      }}
+      onMouseEnter={e => { if (onClick) (e.currentTarget as HTMLElement).style.opacity = "0.8" }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1" }}
+    >
       <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 500, color: "#888780", letterSpacing: "0.02em" }}>
         {label.toUpperCase()}
       </p>

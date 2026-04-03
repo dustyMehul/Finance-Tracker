@@ -23,6 +23,8 @@ logger = get_logger(__name__)
 def list_transactions(
     review_status: Optional[str] = Query(None),
     upload_job_id: Optional[str] = Query(None),
+    label_id: Optional[str] = Query(None),
+    financial_nature: Optional[str] = Query(None),
     include_finalized: bool = Query(False),
     skip: int = Query(0, ge=0),
     limit: int = Query(200, le=1000),
@@ -37,6 +39,10 @@ def list_transactions(
         q = q.filter(Transaction.review_status == review_status)
     if upload_job_id:
         q = q.filter(Transaction.upload_job_id == upload_job_id)
+    if label_id:
+        q = q.filter(Transaction.label_id == label_id)
+    if financial_nature:
+        q = q.filter(Transaction.financial_nature == financial_nature)
 
     q = q.order_by(Transaction.date.desc())
     return q.offset(skip).limit(limit).all()

@@ -22,7 +22,7 @@ export async function getJobStatus(id: string): Promise<UploadJobResponse> { ret
 export async function finalizeJob(id: string): Promise<UploadJobResponse>  { return (await api.post(`/upload/${id}/finalize`)).data }
 
 // --- Transactions ---
-export async function getTransactions(params?: { review_status?: string; upload_job_id?: string; include_finalized?: boolean; skip?: number; limit?: number }): Promise<Transaction[]> {
+export async function getTransactions(params?: { review_status?: string; upload_job_id?: string; label_id?: string; financial_nature?: string; include_finalized?: boolean; skip?: number; limit?: number }): Promise<Transaction[]> {
   return (await api.get("/transactions", { params })).data
 }
 export async function updateTransaction(id: string, update: TransactionUpdate): Promise<Transaction> {
