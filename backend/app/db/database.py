@@ -1,4 +1,8 @@
-from sqlalchemy import create_engine
+import os
+import glob as _glob
+from pathlib import Path
+
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
 
@@ -19,9 +23,38 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def _run_migrations():
+    """Apply any pending .sql migrations from the migrations folder."""
+    migrations_dir = Path(__file__).parent / "migrations"
+    sql_files = sorted(_glob.glob(str(migrations_dir / "*.sql")))
+    with engine.connect() as conn:
+        # Create tracking table if needed
+        conn.execute(text(
+            "CREATE TABLE IF NOT EXISTS schema_migrations "
+            "(filename TEXT PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
+        ))
+        conn.commit()
+        applied = {row[0] for row in conn.execute(text("SELECT filename FROM schema_migrations"))}
+        for path in sql_files:
+            filename = os.path.basename(path)
+            if filename in applied:
+                continue
+            sql = Path(path).read_text()
+            for statement in sql.split(";"):
+                stmt = statement.strip()
+                if stmt and not stmt.startswith("--"):
+                    try:
+                        conn.execute(text(stmt))
+                    except Exception:
+                        pass  # column already exists (SQLite has no IF NOT EXISTS for ALTER)
+            conn.execute(text("INSERT INTO schema_migrations (filename) VALUES (:f)"), {"f": filename})
+            conn.commit()
+
+
 def create_tables():
-    """Create all tables. Called once at startup."""
+    """Create all tables and apply pending migrations. Called once at startup."""
     Base.metadata.create_all(bind=engine)
+    _run_migrations()
 
 
 def get_db() -> Generator[Session, None, None]:

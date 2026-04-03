@@ -46,6 +46,7 @@ class UploadJobResponse(BaseModel):
     job_id: str
     filename: str
     status: JobStatusSchema
+    account_id: Optional[str] = None
     transaction_count: Optional[int] = None
     duplicate_count: Optional[int] = None
     pending_count: Optional[int] = None
@@ -133,3 +134,34 @@ class LabelUpdate(BaseModel):
     color: Optional[str] = None
     is_active: Optional[bool] = None
     nature: Optional[str] = None
+
+
+class AccountCreate(BaseModel):
+    display_name: str
+    bank: Optional[str] = None
+    account_type: Optional[AccountTypeSchema] = None
+    last_4: Optional[str] = None
+    color: Optional[str] = None
+
+
+class AccountUpdate(BaseModel):
+    display_name: Optional[str] = None
+    bank: Optional[str] = None
+    account_type: Optional[AccountTypeSchema] = None
+    last_4: Optional[str] = None
+    color: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class AccountResponse(BaseModel):
+    id: str
+    display_name: str
+    bank: Optional[str] = None
+    account_type: Optional[str] = None
+    last_4: Optional[str] = None
+    color: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

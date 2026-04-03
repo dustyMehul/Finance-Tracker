@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.database import create_tables
 from app.routers import upload, transactions, labels, reports, transfers
-from app.routers import merchant_rules
+from app.routers import merchant_rules, accounts
 
 logger = get_logger("main")
 
@@ -25,6 +25,7 @@ app.include_router(labels.router)
 app.include_router(reports.router)
 app.include_router(transfers.router)
 app.include_router(merchant_rules.router)
+app.include_router(accounts.router, prefix="/accounts", tags=["accounts"])
 
 
 @app.on_event("startup")

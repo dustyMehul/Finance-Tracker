@@ -1,15 +1,16 @@
 import axios from "axios"
 import type {
   UploadJobResponse, Transaction, TransactionUpdate,
-  Label, LabelCreate, TransferSuggestion,
+  Label, LabelCreate, TransferSuggestion, Account, AccountCreate,
 } from "../types"
 
 const api = axios.create({ baseURL: "http://localhost:8000" })
 
 // --- Upload ---
-export async function uploadStatement(file: File, meta: { bank?: string; account_type?: string; account_nickname?: string }): Promise<UploadJobResponse> {
+export async function uploadStatement(file: File, meta: { account_id?: string; bank?: string; account_type?: string; account_nickname?: string }): Promise<UploadJobResponse> {
   const form = new FormData()
   form.append("file", file)
+  if (meta.account_id)       form.append("account_id", meta.account_id)
   if (meta.bank)             form.append("bank", meta.bank)
   if (meta.account_type)     form.append("account_type", meta.account_type)
   if (meta.account_nickname) form.append("account_nickname", meta.account_nickname)
@@ -21,7 +22,7 @@ export async function getJobStatus(id: string): Promise<UploadJobResponse> { ret
 export async function finalizeJob(id: string): Promise<UploadJobResponse>  { return (await api.post(`/upload/${id}/finalize`)).data }
 
 // --- Transactions ---
-export async function getTransactions(params?: { review_status?: string; upload_job_id?: string; include_finalized?: boolean; skip?: number; limit?: number }): Promise<Transaction[]> {
+export async function getTransactions(params?: { review_status?: string; upload_job_id?: string; label_id?: string; financial_nature?: string; include_finalized?: boolean; skip?: number; limit?: number }): Promise<Transaction[]> {
   return (await api.get("/transactions", { params })).data
 }
 export async function updateTransaction(id: string, update: TransactionUpdate): Promise<Transaction> {
@@ -42,6 +43,12 @@ export async function unlinkTransfer(txnId: string): Promise<void> {
 // --- Labels ---
 export async function getLabels(): Promise<Label[]>                   { return (await api.get("/labels")).data }
 export async function createLabel(label: LabelCreate): Promise<Label> { return (await api.post("/labels", label)).data }
+
+// --- Accounts ---
+export async function getAccounts(): Promise<Account[]>                              { return (await api.get("/accounts")).data }
+export async function createAccount(data: AccountCreate): Promise<Account>           { return (await api.post("/accounts", data)).data }
+export async function updateAccount(id: string, data: Partial<AccountCreate & { is_active: boolean }>): Promise<Account> { return (await api.patch(`/accounts/${id}`, data)).data }
+export async function deleteAccount(id: string): Promise<void>                       { await api.delete(`/accounts/${id}`) }
 
 // --- Reports ---
 export async function getReportSummary(period: string)    { return (await api.get(`/reports/summary?period=${period}`)).data }

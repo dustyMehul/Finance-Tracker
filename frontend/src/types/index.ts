@@ -8,6 +8,7 @@ export interface UploadJobResponse {
   job_id: string
   filename: string
   status: JobStatus
+  account_id: string | null
   transaction_count: number | null
   duplicate_count: number | null
   pending_count: number | null
@@ -71,5 +72,24 @@ export interface Label {
 export interface LabelCreate {
   name: string
   slug: string
+  color?: string
+}
+
+export interface Account {
+  id: string
+  display_name: string
+  bank: string | null
+  account_type: AccountType | null
+  last_4: string | null
+  color: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface AccountCreate {
+  display_name: string
+  bank?: string
+  account_type?: AccountType
+  last_4?: string
   color?: string
 }

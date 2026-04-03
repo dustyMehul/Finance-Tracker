@@ -2,46 +2,50 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import DropZone from "../components/DropZone"
-import MetaForm, { type MetaValues } from "../components/MetaForm"
-import { uploadStatement, getTransferSuggestions } from "../api/client"
+import { uploadStatement, getTransferSuggestions, getAccounts } from "../api/client"
+import type { Account } from "../types"
 
 interface FileEntry {
   file: File
-  meta: MetaValues
+  account_id: string
   status: "pending" | "uploading" | "done" | "error"
   error?: string
   jobId?: string
   transactionCount?: number
 }
 
-const defaultMeta = (): MetaValues => ({
-  bank: "",
-  account_type: "",
-  account_nickname: "",
-})
+interface Props {
+  onOpenAccounts: () => void
+}
 
-export default function Upload() {
+export default function Upload({ onOpenAccounts }: Props) {
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [processing, setProcessing] = useState(false)
+  const [selectedAccountId, setSelectedAccountId] = useState("")
   const navigate = useNavigate()
 
   const { data: transferSuggestions = [] } = useQuery({
     queryKey: ["transfer-suggestions"],
     queryFn: getTransferSuggestions,
-    refetchInterval: 10000,  // refresh every 10s after upload
+    refetchInterval: 10000,
+  })
+
+  const { data: accounts = [] } = useQuery<Account[]>({
+    queryKey: ["accounts"],
+    queryFn: getAccounts,
   })
 
   function addFiles(files: File[]) {
     const newEntries: FileEntry[] = files.map(f => ({
       file: f,
-      meta: defaultMeta(),
+      account_id: selectedAccountId,
       status: "pending",
     }))
     setEntries(prev => [...prev, ...newEntries])
   }
 
-  function updateMeta(index: number, meta: MetaValues) {
-    setEntries(prev => prev.map((e, i) => i === index ? { ...e, meta } : e))
+  function updateEntryAccount(index: number, account_id: string) {
+    setEntries(prev => prev.map((e, i) => i === index ? { ...e, account_id } : e))
   }
 
   function removeEntry(index: number) {
@@ -49,22 +53,26 @@ export default function Upload() {
   }
 
   async function processAll() {
+    // Validate all pending entries have an account
+    const missing = entries.filter(e => e.status === "pending" && !e.account_id)
+    if (missing.length > 0) {
+      alert("Please select an account for every file before processing.")
+      return
+    }
+
     setProcessing(true)
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i]
       if (entry.status === "done") continue
 
-      // mark uploading
       setEntries(prev => prev.map((e, idx) =>
         idx === i ? { ...e, status: "uploading" } : e
       ))
 
       try {
         const result = await uploadStatement(entry.file, {
-          bank: entry.meta.bank || undefined,
-          account_type: entry.meta.account_type || undefined,
-          account_nickname: entry.meta.account_nickname || undefined,
+          account_id: entry.account_id || undefined,
         })
 
         setEntries(prev => prev.map((e, idx) =>
@@ -130,11 +138,44 @@ export default function Upload() {
         </div>
       )}
 
-      <DropZone onFiles={addFiles} />
+      {/* Account selector */}
+      {accounts.length === 0 ? (
+        <div style={{
+          padding: "12px 16px", borderRadius: 8, border: "1px dashed #d1d5db",
+          background: "#fafafa", marginBottom: 20, fontSize: 13, color: "#6b7280",
+        }}>
+          No accounts found.{" "}
+          <button
+            onClick={onOpenAccounts}
+            style={{ background: "none", border: "none", color: "#185FA5", cursor: "pointer", fontSize: 13, padding: 0, textDecoration: "underline" }}
+          >
+            Create an account
+          </button>
+          {" "}to get started.
+        </div>
+      ) : (
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 13, color: "#374151", fontWeight: 500, display: "block", marginBottom: 6 }}>
+            Default account for new files
+          </label>
+          <select
+            value={selectedAccountId}
+            onChange={e => setSelectedAccountId(e.target.value)}
+            style={{ padding: "7px 10px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 14, minWidth: 240 }}
+          >
+            <option value="">— select account —</option>
+            {accounts.map((a: Account) => (
+              <option key={a.id} value={a.id}>{a.display_name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <DropZone onFiles={addFiles} disabled={accounts.length > 0 && !selectedAccountId} />
 
       {entries.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          {/* file list */}
+          {/* file list with per-file account selector */}
           <div style={{ marginBottom: 16 }}>
             {entries.map((entry, i) => (
               <div key={i} style={{
@@ -155,6 +196,18 @@ export default function Upload() {
                     {(entry.file.size / 1024).toFixed(0)} KB
                   </p>
                 </div>
+                {entry.status === "pending" && accounts.length > 0 && (
+                  <select
+                    value={entry.account_id}
+                    onChange={e => updateEntryAccount(i, e.target.value)}
+                    style={{ padding: "5px 8px", border: "1px solid #d1d5db", borderRadius: 6, fontSize: 13 }}
+                  >
+                    <option value="">— account —</option>
+                    {accounts.map((a: Account) => (
+                      <option key={a.id} value={a.id}>{a.display_name}</option>
+                    ))}
+                  </select>
+                )}
                 <StatusBadge entry={entry} />
                 {entry.status === "pending" && (
                   <button
@@ -165,25 +218,6 @@ export default function Upload() {
               </div>
             ))}
           </div>
-
-          {/* metadata forms for pending files */}
-          {entries.some(e => e.status === "pending") && (
-            <>
-              <p style={{ fontSize: 12, fontWeight: 500, color: "#888780", margin: "0 0 8px" }}>
-                Statement details
-              </p>
-              {entries.map((entry, i) =>
-                entry.status === "pending" ? (
-                  <MetaForm
-                    key={i}
-                    filename={entry.file.name}
-                    values={entry.meta}
-                    onChange={(meta) => updateMeta(i, meta)}
-                  />
-                ) : null
-              )}
-            </>
-          )}
 
           {/* actions */}
           <div style={{ display: "flex", gap: 10, marginTop: 16, justifyContent: "flex-end" }}>
