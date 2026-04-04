@@ -5,20 +5,20 @@ import type { Transaction, ReviewStatus } from "../types"
 
 // ── Badge configs ──────────────────────────────────────────────────────────
 const STATUS_BADGE: Record<string, { bg: string; color: string; border: string }> = {
-  pending:   { bg: "#FEFCE8", color: "#92400E", border: "#FDE68A" },
-  approved:  { bg: "#EDFAF3", color: "#166534", border: "#A7E9CB" },
-  edited:    { bg: "#EFF4FE", color: "#1E40AF", border: "#BDD0F7" },
-  ignored:   { bg: "#F5F4F2", color: "#8A8780", border: "#E6E4DC" },
-  finalized: { bg: "#F5F3FF", color: "#5B21B6", border: "#DDD6FE" },
+  pending:   { bg: "#1c1508", color: "#e3b341", border: "#3d2e08" },
+  approved:  { bg: "#0e1c15", color: "#56d364", border: "#1a4128" },
+  edited:    { bg: "#0c1f2e", color: "#79c0ff", border: "#1a3956" },
+  ignored:   { bg: "#21262d", color: "#8b949e", border: "#30363d" },
+  finalized: { bg: "#1a0e2e", color: "#d2a8ff", border: "#3d1f6d" },
 }
 
 const NATURE_BADGE: Record<string, { bg: string; color: string; border: string }> = {
-  expense:    { bg: "#FEF0EF", color: "#991B1B", border: "#F9C8C6" },
-  income:     { bg: "#EDFAF3", color: "#166534", border: "#A7E9CB" },
-  transfer:   { bg: "#F5F4F2", color: "#5A5855", border: "#E6E4DC" },
-  investment: { bg: "#EFF4FE", color: "#1E40AF", border: "#BDD0F7" },
-  lending:    { bg: "#FEFCE8", color: "#92400E", border: "#FDE68A" },
-  unknown:    { bg: "#F5F4F2", color: "#8A8780", border: "#E6E4DC" },
+  expense:    { bg: "#1c0a09", color: "#ff7b72", border: "#3d1210" },
+  income:     { bg: "#0e1c15", color: "#56d364", border: "#1a4128" },
+  transfer:   { bg: "#21262d", color: "#8b949e", border: "#30363d" },
+  investment: { bg: "#0c1f2e", color: "#79c0ff", border: "#1a3956" },
+  lending:    { bg: "#1c1508", color: "#e3b341", border: "#3d2e08" },
+  unknown:    { bg: "#21262d", color: "#656d76", border: "#30363d" },
 }
 
 const EXCLUDED_NATURES = new Set(["transfer", "lending", "unknown"])
@@ -49,9 +49,9 @@ function NatureBadge({ nature }: { nature: string | null }) {
 
 // ── Shared select/input style ──────────────────────────────────────────────
 const editInp: React.CSSProperties = {
-  padding: "6px 10px", borderRadius: 7, border: "1px solid #E6E4DC",
-  fontSize: 12, background: "#FFFFFF", color: "#1A1916",
-  fontFamily: "'Manrope', sans-serif", outline: "none",
+  padding: "6px 10px", borderRadius: 7, border: "1px solid #30363d",
+  fontSize: 12, background: "#0d1117", color: "#e6edf3",
+  fontFamily: "'Outfit', sans-serif", outline: "none",
 }
 
 export default function Reconcile() {
@@ -140,22 +140,22 @@ export default function Reconcile() {
   }
 
   if (jobsLoading) return (
-    <div style={{ padding: "36px 40px", fontSize: 13, color: "#A8A5A0" }}>Loading…</div>
+    <div style={{ padding: "36px 40px", fontSize: 13, color: "#656d76" }}>Loading…</div>
   )
 
   return (
     <div style={{ padding: "36px 40px" }}>
-      <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4 }}>
+      <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4, color: "#e6edf3" }}>
         Reconcile
       </h1>
-      <p style={{ fontSize: 13, color: "#6B6862", marginBottom: 32 }}>
+      <p style={{ fontSize: 13, color: "#8b949e", marginBottom: 32 }}>
         Review and finalize each imported statement. Finalized statements are locked and used in reports.
       </p>
 
       {activeJobs.length === 0 && finalizedJobs.length === 0 && (
         <div style={{
-          padding: "40px 24px", borderRadius: 12, border: "1px dashed #D0CEC8",
-          background: "#FAFAF8", textAlign: "center", fontSize: 13, color: "#A8A5A0",
+          padding: "40px 24px", borderRadius: 12, border: "1px dashed #30363d",
+          background: "#161b22", textAlign: "center", fontSize: 13, color: "#656d76",
         }}>
           No statements imported yet. Go to Import to upload one.
         </div>
@@ -170,19 +170,18 @@ export default function Reconcile() {
 
         return (
           <div key={job.job_id} style={{
-            border: "1px solid #E6E4DC",
+            border: "1px solid #30363d",
             borderRadius: 12,
             marginBottom: 14,
             overflow: "hidden",
-            background: "#FFFFFF",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            background: "#161b22",
           }}>
             {/* Job header */}
             <div
               style={{
                 display: "flex", alignItems: "center", gap: 14,
                 padding: "14px 20px", cursor: "pointer",
-                background: isOpen ? "#FAFAF8" : "#FFFFFF",
+                background: isOpen ? "#1c2128" : "#161b22",
                 transition: "background 0.1s",
               }}
               onClick={() => setExpandedJob(isOpen ? null : job.job_id)}
@@ -190,17 +189,17 @@ export default function Reconcile() {
               {/* Chevron */}
               <svg
                 width="12" height="12" viewBox="0 0 24 24" fill="none"
-                stroke="#C8C5BE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                stroke="#484f58" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                 style={{ flexShrink: 0, transform: isOpen ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s" }}
               >
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1A1916", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#e6edf3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {job.filename}
                 </p>
-                <p style={{ margin: "3px 0 0", fontSize: 11, color: "#A8A5A0", fontFamily: "'JetBrains Mono', monospace" }}>
+                <p style={{ margin: "3px 0 0", fontSize: 11, color: "#656d76", fontFamily: "'JetBrains Mono', monospace" }}>
                   {job.transaction_count} transactions
                   {job.duplicate_count ? ` · ${job.duplicate_count} duplicates` : ""}
                   {" · "}{new Date(job.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
@@ -210,7 +209,7 @@ export default function Reconcile() {
               {pending > 0 && (
                 <span style={{
                   fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99,
-                  background: "#FEFCE8", color: "#92400E", border: "1px solid #FDE68A",
+                  background: "#1c1508", color: "#e3b341", border: "1px solid #3d2e08",
                   whiteSpace: "nowrap",
                 }}>
                   {pending} pending
@@ -223,11 +222,11 @@ export default function Reconcile() {
                   disabled={finalizeMutation.isPending}
                   style={{
                     padding: "7px 16px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-                    cursor: "pointer", border: "none",
-                    background: "#1A1916", color: "#fff",
+                    cursor: "pointer", border: "1px solid #388bfd",
+                    background: "#1f6feb", color: "#fff",
                     opacity: finalizeMutation.isPending ? 0.6 : 1,
                     whiteSpace: "nowrap", transition: "opacity 0.15s",
-                    fontFamily: "'Manrope', sans-serif",
+                    fontFamily: "'Outfit', sans-serif",
                   }}
                 >
                   {finalizeMutation.isPending ? "Finalizing…" : "Finalize statement"}
@@ -237,22 +236,23 @@ export default function Reconcile() {
 
             {/* Transaction table */}
             {isOpen && (
-              <div style={{ borderTop: "1px solid #E6E4DC" }}>
+              <div style={{ borderTop: "1px solid #30363d" }}>
 
                 {/* Bulk actions bar */}
                 {pending > 0 && (
                   <div style={{
-                    padding: "10px 20px", background: "#FAFAF8",
+                    padding: "10px 20px", background: "#1c2128",
                     display: "flex", gap: 8, alignItems: "center",
-                    borderBottom: "1px solid #F0EEE8",
+                    borderBottom: "1px solid #21262d",
                   }}>
-                    <span style={{ fontSize: 12, color: "#8A8780", flex: 1, fontWeight: 500 }}>
+                    <span style={{ fontSize: 12, color: "#8b949e", flex: 1, fontWeight: 500 }}>
                       {pending} transactions pending review
                     </span>
                     <button onClick={() => approveAll(job.job_id)} style={{
                       padding: "4px 12px", borderRadius: 99, fontSize: 11, fontWeight: 600,
-                      border: "1px solid #A7E9CB", background: "#EDFAF3",
-                      color: "#166534", cursor: "pointer", letterSpacing: "0.02em",
+                      border: "1px solid #1a4128", background: "#0e1c15",
+                      color: "#56d364", cursor: "pointer", letterSpacing: "0.02em",
+                      fontFamily: "'Outfit', sans-serif",
                     }}>✓ Approve all</button>
                     <button onClick={() =>
                       txnsForJob(job.job_id)
@@ -260,8 +260,8 @@ export default function Reconcile() {
                         .forEach(t => updateMutation.mutate({ id: t.id, update: { review_status: "ignored" } }))
                     } style={{
                       padding: "4px 12px", borderRadius: 99, fontSize: 11, fontWeight: 500,
-                      border: "1px solid #E6E4DC", background: "transparent",
-                      color: "#8A8780", cursor: "pointer",
+                      border: "1px solid #30363d", background: "transparent",
+                      color: "#8b949e", cursor: "pointer", fontFamily: "'Outfit', sans-serif",
                     }}>✕ Ignore all</button>
                   </div>
                 )}
@@ -269,12 +269,12 @@ export default function Reconcile() {
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
-                      <tr style={{ background: "#FAFAF8", borderBottom: "1px solid #E6E4DC" }}>
+                      <tr style={{ background: "#1c2128", borderBottom: "1px solid #21262d" }}>
                         {["Date", "Description", "Amount", "Nature", "Category", "Conf.", "Status", ""].map(h => (
                           <th key={h} style={{
                             padding: "10px 14px",
                             textAlign: h === "Amount" ? "right" : "left",
-                            fontSize: 10, fontWeight: 600, color: "#A8A5A0",
+                            fontSize: 10, fontWeight: 600, color: "#656d76",
                             textTransform: "uppercase", letterSpacing: "0.06em",
                             whiteSpace: "nowrap",
                           }}>{h}</th>
@@ -296,10 +296,10 @@ export default function Reconcile() {
                               <tr>
                                 <td colSpan={8} style={{
                                   padding: "4px 14px",
-                                  background: "#FEFCE8",
-                                  borderBottom: "1px solid #FDE68A",
+                                  background: "#1c1508",
+                                  borderBottom: "1px solid #3d2e08",
                                 }}>
-                                  <span style={{ fontSize: 11, color: "#92400E", fontWeight: 500 }}>
+                                  <span style={{ fontSize: 11, color: "#e3b341", fontWeight: 500 }}>
                                     ⚠ {txn.financial_nature === "transfer"
                                       ? "Transfer — excluded from reports. Assign a label (e.g. CC payment) for your records."
                                       : `${txn.financial_nature} — not counted in spend or income reports`}
@@ -310,28 +310,28 @@ export default function Reconcile() {
 
                             {/* Main transaction row */}
                             <tr style={{
-                              borderBottom: "1px solid #F7F5F0",
+                              borderBottom: "1px solid #21262d",
                               opacity: txn.review_status === "ignored" ? 0.38 : 1,
-                              background: txn.is_duplicate ? "#FFFBEB" : "transparent",
+                              background: txn.is_duplicate ? "#1c1508" : "transparent",
                             }}>
-                              <td style={{ padding: "11px 14px", whiteSpace: "nowrap", color: "#8A8780", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
+                              <td style={{ padding: "11px 14px", whiteSpace: "nowrap", color: "#656d76", fontFamily: "'JetBrains Mono', monospace", fontSize: 12 }}>
                                 {txn.date}
                               </td>
                               <td style={{ padding: "11px 14px", maxWidth: 260 }}>
-                                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#1A1916" }}>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#e6edf3" }}>
                                   {txn.description}
                                 </p>
                                 {txn.is_duplicate && (
                                   <span style={{
-                                    fontSize: 10, fontWeight: 600, color: "#92400E",
-                                    background: "#FEFCE8", padding: "1px 6px", borderRadius: 4,
-                                    border: "1px solid #FDE68A",
+                                    fontSize: 10, fontWeight: 600, color: "#e3b341",
+                                    background: "#1c1508", padding: "1px 6px", borderRadius: 4,
+                                    border: "1px solid #3d2e08",
                                   }}>
                                     duplicate
                                   </span>
                                 )}
                                 {txn.user_note && (
-                                  <p style={{ margin: "2px 0 0", fontSize: 11, color: "#A8A5A0", fontStyle: "italic" }}>
+                                  <p style={{ margin: "2px 0 0", fontSize: 11, color: "#656d76", fontStyle: "italic" }}>
                                     {txn.user_note}
                                   </p>
                                 )}
@@ -341,7 +341,7 @@ export default function Reconcile() {
                                   fontSize: 13, fontWeight: 700,
                                   fontFamily: "'JetBrains Mono', monospace",
                                   letterSpacing: "-0.02em",
-                                  color: isDebit ? "#D94B45" : "#18A96B",
+                                  color: isDebit ? "#f85149" : "#3fb950",
                                 }}>
                                   {isDebit ? "−" : "+"}₹{txn.amount.toLocaleString("en-IN")}
                                 </span>
@@ -353,14 +353,14 @@ export default function Reconcile() {
                                 {label ? (
                                   <span style={{
                                     fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 99,
-                                    background: label.color ? `${label.color}18` : "#F5F4F2",
-                                    color: label.color ?? "#5A5855",
-                                    border: `1px solid ${label.color ? `${label.color}40` : "#E6E4DC"}`,
+                                    background: label.color ? `${label.color}20` : "#21262d",
+                                    color: label.color ?? "#8b949e",
+                                    border: `1px solid ${label.color ? `${label.color}40` : "#30363d"}`,
                                   }}>
                                     {label.name}
                                   </span>
                                 ) : (
-                                  <span style={{ fontSize: 11, color: "#D0CEC8" }}>—</span>
+                                  <span style={{ fontSize: 11, color: "#484f58" }}>—</span>
                                 )}
                               </td>
                               <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
@@ -368,11 +368,11 @@ export default function Reconcile() {
                                   <span style={{
                                     fontSize: 12, fontWeight: 600,
                                     fontFamily: "'JetBrains Mono', monospace",
-                                    color: conf >= 0.9 ? "#166534" : conf >= 0.75 ? "#92400E" : "#991B1B",
+                                    color: conf >= 0.9 ? "#3fb950" : conf >= 0.75 ? "#e3b341" : "#f85149",
                                   }}>
                                     {Math.round(conf * 100)}%
                                   </span>
-                                ) : <span style={{ fontSize: 11, color: "#D0CEC8" }}>—</span>}
+                                ) : <span style={{ fontSize: 11, color: "#484f58" }}>—</span>}
                               </td>
                               <td style={{ padding: "11px 14px" }}>
                                 <span style={{
@@ -387,13 +387,13 @@ export default function Reconcile() {
                               <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
                                 <div style={{ display: "flex", gap: 5 }}>
                                   {txn.review_status !== "approved" && (
-                                    <ActionBtn icon="✓" title="Approve" color="#166534" bg="#EDFAF3" border="#A7E9CB" onClick={() => setStatus(txn, "approved")} />
+                                    <ActionBtn icon="✓" title="Approve" color="#3fb950" bg="#0e1c15" border="#1a4128" onClick={() => setStatus(txn, "approved")} />
                                   )}
                                   {txn.review_status !== "ignored" && (
-                                    <ActionBtn icon="✕" title="Ignore" color="#8A8780" bg="#F5F4F2" border="#E6E4DC" onClick={() => setStatus(txn, "ignored")} />
+                                    <ActionBtn icon="✕" title="Ignore" color="#8b949e" bg="#21262d" border="#30363d" onClick={() => setStatus(txn, "ignored")} />
                                   )}
                                   <ActionBtn
-                                    icon="✎" title="Edit" color="#1E40AF" bg="#EFF4FE" border="#BDD0F7"
+                                    icon="✎" title="Edit" color="#79c0ff" bg="#0c1f2e" border="#1a3956"
                                     onClick={() => {
                                       setEditingId(isEditing ? null : txn.id)
                                       setNoteValue(txn.user_note ?? "")
@@ -407,7 +407,7 @@ export default function Reconcile() {
 
                             {/* Inline edit row */}
                             {isEditing && (
-                              <tr style={{ background: "#F5F8FE" }}>
+                              <tr style={{ background: "#0c1f2e" }}>
                                 <td colSpan={8} style={{ padding: "12px 14px" }}>
                                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                                     <select
@@ -433,7 +433,7 @@ export default function Reconcile() {
                                       </select>
                                     )}
                                     {natureValue && !NATURE_HAS_LABELS.has(natureValue) && (
-                                      <span style={{ fontSize: 12, color: "#A8A5A0", fontStyle: "italic" }}>No labels for {natureValue}</span>
+                                      <span style={{ fontSize: 12, color: "#656d76", fontStyle: "italic" }}>No labels for {natureValue}</span>
                                     )}
 
                                     <input
@@ -446,9 +446,9 @@ export default function Reconcile() {
                                     <button
                                       onClick={() => saveNote(txn)}
                                       style={{
-                                        padding: "6px 16px", borderRadius: 7, border: "none",
-                                        background: "#1A1916", color: "#fff", fontSize: 12,
-                                        fontWeight: 600, cursor: "pointer", fontFamily: "'Manrope', sans-serif",
+                                        padding: "6px 16px", borderRadius: 7, border: "1px solid #388bfd",
+                                        background: "#1f6feb", color: "#fff", fontSize: 12,
+                                        fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif",
                                       }}
                                     >
                                       Save
@@ -457,9 +457,9 @@ export default function Reconcile() {
                                       onClick={() => setEditingId(null)}
                                       style={{
                                         padding: "6px 14px", borderRadius: 7,
-                                        border: "1px solid #E6E4DC", background: "#FFFFFF",
+                                        border: "1px solid #30363d", background: "#21262d",
                                         fontSize: 12, fontWeight: 500, cursor: "pointer",
-                                        color: "#6B6862", fontFamily: "'Manrope', sans-serif",
+                                        color: "#8b949e", fontFamily: "'Outfit', sans-serif",
                                       }}
                                     >
                                       Cancel
@@ -483,21 +483,21 @@ export default function Reconcile() {
       {/* ── Finalized jobs ── */}
       {finalizedJobs.length > 0 && (
         <div style={{ marginTop: 36 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: "#A8A5A0", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: "#656d76", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
             Finalized statements
           </p>
           {finalizedJobs.map(job => (
             <div key={job.job_id} style={{
               display: "flex", alignItems: "center", gap: 14,
               padding: "13px 20px",
-              border: "1px solid #E6E4DC", borderRadius: 10,
-              marginBottom: 8, background: "#FAFAF8",
+              border: "1px solid #30363d", borderRadius: 10,
+              marginBottom: 8, background: "#161b22",
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#6B6862", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#8b949e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {job.filename}
                 </p>
-                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#A8A5A0", fontFamily: "'JetBrains Mono', monospace" }}>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "#656d76", fontFamily: "'JetBrains Mono', monospace" }}>
                   {job.transaction_count} transactions · finalized{" "}
                   {job.finalized_at
                     ? new Date(job.finalized_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -506,7 +506,7 @@ export default function Reconcile() {
               </div>
               <span style={{
                 fontSize: 10, fontWeight: 600, padding: "3px 9px", borderRadius: 99,
-                background: "#F5F3FF", color: "#5B21B6", border: "1px solid #DDD6FE",
+                background: "#1a0e2e", color: "#d2a8ff", border: "1px solid #3d1f6d",
                 textTransform: "uppercase", letterSpacing: "0.04em",
               }}>
                 Finalized
@@ -531,7 +531,7 @@ function ActionBtn({ icon, title, color, bg, border, onClick }: {
       onMouseLeave={() => setHov(false)}
       style={{
         width: 28, height: 28, borderRadius: 7,
-        border: `1px solid ${hov ? border : "#E6E4DC"}`,
+        border: `1px solid ${hov ? border : "#30363d"}`,
         background: hov ? bg : "transparent",
         cursor: "pointer", color, fontSize: 13,
         display: "flex", alignItems: "center", justifyContent: "center",

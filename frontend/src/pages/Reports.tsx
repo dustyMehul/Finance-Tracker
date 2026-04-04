@@ -27,7 +27,7 @@ function fmt(n: number) {
 // ── Section label ──────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontSize: 10, fontWeight: 600, color: "#A8A5A0", textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 14px" }}>
+    <p style={{ fontSize: 10, fontWeight: 600, color: "#656d76", textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 14px" }}>
       {children}
     </p>
   )
@@ -47,29 +47,29 @@ export default function Reports() {
 
       {/* Page header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em" }}>Reports</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "#e6edf3" }}>Reports</h1>
         <select
           value={period}
           onChange={e => setPeriod(e.target.value)}
           style={{
             padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-            border: "1px solid #E6E4DC", background: "#FFFFFF",
-            color: "#1A1916", cursor: "pointer",
-            fontFamily: "'Manrope', sans-serif",
+            border: "1px solid #30363d", background: "#0d1117",
+            color: "#e6edf3", cursor: "pointer",
+            fontFamily: "'Outfit', sans-serif",
           }}
         >
           {PERIODS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
         </select>
       </div>
 
-      <p style={{ fontSize: 12, color: "#A8A5A0", margin: "0 0 24px", fontFamily: "'JetBrains Mono', monospace" }}>
+      <p style={{ fontSize: 12, color: "#656d76", margin: "0 0 24px", fontFamily: "'JetBrains Mono', monospace" }}>
         {isLoading ? "—" : summary?.period_label ?? ""}
       </p>
 
       {/* Pill tab bar */}
       <div style={{
         display: "flex", gap: 2,
-        background: "#EFEDE8", borderRadius: 11, padding: 3,
+        background: "#21262d", borderRadius: 11, padding: 3,
         marginBottom: 32, width: "fit-content",
       }}>
         {TABS.map(t => (
@@ -77,13 +77,13 @@ export default function Reports() {
             padding: "7px 16px", borderRadius: 9, border: "none",
             fontSize: 12, fontWeight: tab === t ? 700 : 500,
             cursor: "pointer",
-            background: tab === t ? "#FFFFFF" : "transparent",
-            color: tab === t ? "#1A1916" : "#8A8780",
-            boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.1), 0 0 0 0.5px rgba(0,0,0,0.04)" : "none",
+            background: tab === t ? "#161b22" : "transparent",
+            color: tab === t ? "#e6edf3" : "#656d76",
+            boxShadow: tab === t ? "0 1px 4px rgba(1,4,9,0.4)" : "none",
             transition: "all 0.12s",
             whiteSpace: "nowrap",
             letterSpacing: "0.01em",
-            fontFamily: "'Manrope', sans-serif",
+            fontFamily: "'Outfit', sans-serif",
           }}>{t}</button>
         ))}
       </div>
@@ -112,7 +112,7 @@ function OverviewTab({ summary, isLoading, period }: { summary: any; isLoading: 
   })
 
   if (isLoading) return (
-    <div style={{ textAlign: "center", padding: "60px 0", color: "#A8A5A0", fontSize: 13 }}>Loading…</div>
+    <div style={{ textAlign: "center", padding: "60px 0", color: "#656d76", fontSize: 13 }}>Loading…</div>
   )
   if (!summary) return null
 
@@ -127,28 +127,28 @@ function OverviewTab({ summary, isLoading, period }: { summary: any; isLoading: 
           label="Cash inflow"
           sublabel="Income and investment returns"
           value={fmt(summary.cash_inflow)}
-          valueColor="#18A96B"
+          valueColor="#3fb950"
           count={`${summary.cash_inflow_count} transaction${summary.cash_inflow_count !== 1 ? "s" : ""}`}
         />
         <SummaryCard
           label="Expenses"
           sublabel="All money spent"
           value={fmt(summary.total_expenses)}
-          valueColor="#D94B45"
+          valueColor="#f85149"
           count={`${summary.expense_count} transaction${summary.expense_count !== 1 ? "s" : ""}`}
         />
         <SummaryCard
           label="Investments"
           sublabel="Money put into investments"
           value={fmt(summary.total_invested)}
-          valueColor="#2A6DD9"
+          valueColor="#58a6ff"
           count={`${summary.invested_count} transaction${summary.invested_count !== 1 ? "s" : ""}`}
         />
         <SummaryCard
           label="Liquidity"
           sublabel="Inflow − Expenses − Investments"
           value={(liquidityPositive ? "" : "−") + fmt(liquidity)}
-          valueColor={liquidityPositive ? "#18A96B" : "#D94B45"}
+          valueColor={liquidityPositive ? "#3fb950" : "#f85149"}
           count={liquidityPositive ? "available" : "shortfall"}
         />
       </div>
@@ -157,11 +157,11 @@ function OverviewTab({ summary, isLoading, period }: { summary: any; isLoading: 
       {summary.unknown_count > 0 && (
         <div style={{
           padding: "11px 16px", borderRadius: 9, marginBottom: 28,
-          background: "#FEFCE8", border: "1px solid #FDE68A",
-          fontSize: 12, color: "#92400E", fontWeight: 500,
+          background: "#1c1508", border: "1px solid #3d2e08",
+          fontSize: 12, color: "#e3b341", fontWeight: 500,
         }}>
           ⚠ {summary.unknown_count} transaction{summary.unknown_count !== 1 ? "s" : ""} have unknown nature — excluded from totals.
-          Fix in <a href="/reconcile" style={{ color: "#92400E", fontWeight: 700, textDecoration: "underline" }}>Reconcile</a>.
+          Fix in <a href="/reconcile" style={{ color: "#e3b341", fontWeight: 700, textDecoration: "underline" }}>Reconcile</a>.
         </div>
       )}
 
@@ -169,7 +169,7 @@ function OverviewTab({ summary, isLoading, period }: { summary: any; isLoading: 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
 
         {/* Spend by category */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "22px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+        <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "22px 24px" }}>
           <SectionLabel>Spend by category</SectionLabel>
           {categories?.categories?.slice(0, 6).map((c: any) => {
             const max = categories.categories[0]?.amount || 1
@@ -178,28 +178,28 @@ function OverviewTab({ summary, isLoading, period }: { summary: any; isLoading: 
             const pctOfTotal = Math.round((c.amount / totalExpenses) * 100)
             return (
               <div key={c.label_id ?? c.label_name} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 12, color: "#6B6862", width: 110, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: 12, color: "#8b949e", width: 110, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {c.label_name}
                 </span>
-                <div style={{ flex: 1, height: 5, background: "#F0EEE8", borderRadius: 99, overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: c.color || "#D0CEC8", borderRadius: 99, transition: "width 0.4s" }} />
+                <div style={{ flex: 1, height: 5, background: "#21262d", borderRadius: 99, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: c.color || "#484f58", borderRadius: 99, transition: "width 0.4s" }} />
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, width: 72, textAlign: "right", flexShrink: 0, color: "#1A1916", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.02em" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, width: 72, textAlign: "right", flexShrink: 0, color: "#e6edf3", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.02em" }}>
                   {fmt(c.amount)}
                 </span>
-                <span style={{ fontSize: 10, color: "#A8A5A0", width: 30, textAlign: "right", flexShrink: 0, fontFamily: "'JetBrains Mono', monospace" }}>
+                <span style={{ fontSize: 10, color: "#656d76", width: 30, textAlign: "right", flexShrink: 0, fontFamily: "'JetBrains Mono', monospace" }}>
                   {pctOfTotal}%
                 </span>
               </div>
             )
           })}
           {(!categories?.categories || categories.categories.length === 0) && (
-            <p style={{ fontSize: 13, color: "#A8A5A0" }}>No expense data for this period.</p>
+            <p style={{ fontSize: 13, color: "#656d76" }}>No expense data for this period.</p>
           )}
         </div>
 
         {/* Trend chart */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "22px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+        <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "22px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <SectionLabel>Income vs Expenses</SectionLabel>
             <TogglePill
@@ -249,11 +249,11 @@ function ExpensesTooltip({ active, payload, label, activeKey }: any) {
     : (LINE_LABELS[item.dataKey] ?? item.dataKey)
   return (
     <div style={{
-      background: "#FFFFFF", border: "1px solid #E6E4DC",
+      background: "#1c2128", border: "1px solid #30363d",
       borderRadius: 9, padding: "9px 13px", fontSize: 12,
-      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+      boxShadow: "0 4px 16px rgba(1,4,9,0.5)",
     }}>
-      <div style={{ color: "#A8A5A0", marginBottom: 5, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
+      <div style={{ color: "#656d76", marginBottom: 5, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
       <div style={{ color: item.stroke ?? item.fill, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
         {displayName}: {fmt(Number(item.value ?? 0))}
       </div>
@@ -283,8 +283,8 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
   const rest = allCats.slice(9)
   const restTotal = rest.reduce((s: number, c: any) => s + c.amount, 0)
   const donutData = [
-    ...top9.map((c: any) => ({ name: c.label_name, value: c.amount, fill: c.color || "#D0CEC8" })),
-    ...(restTotal > 0 ? [{ name: "Other", value: restTotal, fill: "#D0CEC8" }] : []),
+    ...top9.map((c: any) => ({ name: c.label_name, value: c.amount, fill: c.color || "#484f58" })),
+    ...(restTotal > 0 ? [{ name: "Other", value: restTotal, fill: "#484f58" }] : []),
   ]
   const totalExp = allCats.reduce((s: number, c: any) => s + c.amount, 0)
 
@@ -309,11 +309,11 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 28 }}>
 
       {/* Left: donut + legend */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "22px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+      <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "22px 24px" }}>
         <SectionLabel>Spend by category</SectionLabel>
 
         {donutData.length === 0 ? (
-          <p style={{ fontSize: 13, color: "#A8A5A0" }}>No expense data for this period.</p>
+          <p style={{ fontSize: 13, color: "#656d76" }}>No expense data for this period.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <div style={{ position: "relative", width: 210, height: 210 }}>
@@ -322,18 +322,18 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
                   <Pie
                     data={donutData} cx="50%" cy="50%"
                     innerRadius={65} outerRadius={95}
-                    dataKey="value" strokeWidth={2} stroke="#FFFFFF"
+                    dataKey="value" strokeWidth={2} stroke="#161b22"
                     style={{ cursor: "pointer" }}
                     onClick={(slice: any) => {
                       const cat = allCats.find((c: any) => c.label_name === slice.name)
-                      if (cat?.label_id) setDrawer({ labelId: cat.label_id, name: cat.label_name, color: cat.color || "#D0CEC8" })
+                      if (cat?.label_id) setDrawer({ labelId: cat.label_id, name: cat.label_name, color: cat.color || "#484f58" })
                     }}
                   >
                     {donutData.map((d: any, i: number) => <Cell key={i} fill={d.fill} />)}
                   </Pie>
                   <RTooltip
                     formatter={(value, name) => [fmt(Number(value ?? 0)), String(name)]}
-                    contentStyle={{ fontSize: 12, borderRadius: 9, border: "1px solid #E6E4DC", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+                    contentStyle={{ fontSize: 12, borderRadius: 9, border: "1px solid #30363d", background: "#1c2128", color: "#e6edf3", boxShadow: "0 4px 16px rgba(1,4,9,0.5)" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -341,8 +341,8 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
                 position: "absolute", top: "50%", left: "50%",
                 transform: "translate(-50%, -50%)", textAlign: "center", pointerEvents: "none",
               }}>
-                <div style={{ fontSize: 10, color: "#A8A5A0", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A1916", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.02em" }}>
+                <div style={{ fontSize: 10, color: "#656d76", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#e6edf3", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.02em" }}>
                   {fmt(totalExp)}
                 </div>
               </div>
@@ -361,13 +361,13 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
                       borderRadius: 7, padding: "4px 6px",
                       transition: "background 0.1s",
                     }}
-                    onMouseEnter={e => { if (cat?.label_id) (e.currentTarget as HTMLElement).style.background = "#F5F4F2" }}
+                    onMouseEnter={e => { if (cat?.label_id) (e.currentTarget as HTMLElement).style.background = "#1c2128" }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent" }}
                   >
                     <div style={{ width: 9, height: 9, borderRadius: 2, background: d.fill, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: "#6B6862", flex: 1 }}>{d.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#1A1916", fontFamily: "'JetBrains Mono', monospace" }}>{fmt(d.value)}</span>
-                    <span style={{ fontSize: 10, color: "#A8A5A0", width: 34, textAlign: "right", fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span style={{ fontSize: 12, color: "#8b949e", flex: 1 }}>{d.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3", fontFamily: "'JetBrains Mono', monospace" }}>{fmt(d.value)}</span>
+                    <span style={{ fontSize: 10, color: "#656d76", width: 34, textAlign: "right", fontFamily: "'JetBrains Mono', monospace" }}>
                       {Math.round((d.value / totalExp) * 100)}%
                     </span>
                   </div>
@@ -386,7 +386,7 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
       )}
 
       {/* Right: trend chart */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "22px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+      <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "22px 24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <SectionLabel>Trend of expenses</SectionLabel>
           <TogglePill
@@ -398,21 +398,21 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
         </div>
 
         {trendItems.length === 0 ? (
-          <p style={{ fontSize: 13, color: "#A8A5A0" }}>No trend data available.</p>
+          <p style={{ fontSize: 13, color: "#656d76" }}>No trend data available.</p>
         ) : (
           <>
             <ResponsiveContainer width="100%" height={280}>
               <ComposedChart data={trendItems} margin={{ top: 4, right: 52, left: 0, bottom: 0 }} onMouseLeave={() => setActiveKey("spend")}>
-                <CartesianGrid vertical={false} stroke="#F0EEE8" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#A8A5A0", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="bar" tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#C8C5BE", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={48} />
-                <YAxis yAxisId="line" orientation="right" tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#C8C5BE", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={48} />
+                <CartesianGrid vertical={false} stroke="#21262d" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#656d76", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="bar" tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#484f58", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={48} />
+                <YAxis yAxisId="line" orientation="right" tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#484f58", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={48} />
                 <RTooltip content={<ExpensesTooltip activeKey={activeKey} />} />
-                <Bar yAxisId="bar" dataKey="spend" fill="#D94B45" opacity={0.2} radius={[4, 4, 0, 0]} name="spend" onMouseOver={() => setActiveKey("spend")} />
+                <Bar yAxisId="bar" dataKey="spend" fill="#f85149" opacity={0.2} radius={[4, 4, 0, 0]} name="spend" onMouseOver={() => setActiveKey("spend")} />
                 {activeLines.map((slug: string) => (
                   <Line
                     key={slug} yAxisId="line" type="linear" dataKey={slug}
-                    stroke={LINE_COLORS[slug] ?? "#A8A5A0"} strokeWidth={2}
+                    stroke={LINE_COLORS[slug] ?? "#8b949e"} strokeWidth={2}
                     dot={false} name={slug}
                     activeDot={{ onMouseOver: () => setActiveKey(slug), r: 4 }}
                   />
@@ -423,8 +423,8 @@ function ExpensesTab({ period, accountType }: { period: string; accountType?: st
             {activeLines.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", marginTop: 12 }}>
                 {activeLines.map((slug: string) => (
-                  <div key={slug} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8A8780" }}>
-                    <div style={{ width: 16, height: 2, background: LINE_COLORS[slug] ?? "#A8A5A0", borderRadius: 1 }} />
+                  <div key={slug} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8b949e" }}>
+                    <div style={{ width: 16, height: 2, background: LINE_COLORS[slug] ?? "#8b949e", borderRadius: 1 }} />
                     {LINE_LABELS[slug] ?? slug}
                   </div>
                 ))}
@@ -482,8 +482,8 @@ function MoneyLentTab({ summary }: { summary: any }) {
     const barX = x + (width - barW) / 2
     return (
       <g>
-        {returned > 0 && <rect x={barX} y={zeroY - returnedH} width={barW} height={returnedH} fill="#18A96B" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("returned")} />}
-        {lent_out > 0 && <rect x={barX} y={zeroY} width={barW} height={lentH} fill="#D94B45" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("lent_out")} />}
+        {returned > 0 && <rect x={barX} y={zeroY - returnedH} width={barW} height={returnedH} fill="#3fb950" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("returned")} />}
+        {lent_out > 0 && <rect x={barX} y={zeroY} width={barW} height={lentH} fill="#f85149" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("lent_out")} />}
       </g>
     )
   }
@@ -498,22 +498,22 @@ function MoneyLentTab({ summary }: { summary: any }) {
     const barW = Math.max(width * 0.5, 4)
     const barX = x + (width - barW) / 2
     const isPos = net >= 0
-    return <rect x={barX} y={isPos ? zeroY - h : zeroY} width={barW} height={h} fill={isPos ? "#18A96B" : "#D94B45"} rx={3} ry={3} />
+    return <rect x={barX} y={isPos ? zeroY - h : zeroY} width={barW} height={h} fill={isPos ? "#3fb950" : "#f85149"} rx={3} ry={3} />
   }
 
   return (
     <div>
       {drawerOpen && (
-        <TransactionDrawer open={true} onClose={() => setDrawerOpen(false)} title="Money lent" color="#A16207" financialNature="lending" />
+        <TransactionDrawer open={true} onClose={() => setDrawerOpen(false)} title="Money lent" color="#e3b341" financialNature="lending" />
       )}
 
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 32 }}>
-        <SummaryCard label="Money received" sublabel="Returned to you" value={fmt(summary?.lending_in ?? 0)} valueColor="#18A96B" count="" onClick={() => setDrawerOpen(true)} />
-        <SummaryCard label="Money sent" sublabel="Lent out" value={fmt(summary?.lending_out ?? 0)} valueColor="#D94B45" count="" onClick={() => setDrawerOpen(true)} />
+        <SummaryCard label="Money received" sublabel="Returned to you" value={fmt(summary?.lending_in ?? 0)} valueColor="#3fb950" count="" onClick={() => setDrawerOpen(true)} />
+        <SummaryCard label="Money sent" sublabel="Lent out" value={fmt(summary?.lending_out ?? 0)} valueColor="#f85149" count="" onClick={() => setDrawerOpen(true)} />
         {(() => {
           const net = (summary?.lending_in ?? 0) - (summary?.lending_out ?? 0)
-          return <SummaryCard label="Net" sublabel="Received − Sent" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#18A96B" : "#D94B45"} count="" onClick={() => setDrawerOpen(true)} />
+          return <SummaryCard label="Net" sublabel="Received − Sent" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#3fb950" : "#f85149"} count="" onClick={() => setDrawerOpen(true)} />
         })()}
       </div>
 
@@ -524,11 +524,11 @@ function MoneyLentTab({ summary }: { summary: any }) {
         </div>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <div style={{ display: "flex", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8A8780" }}>
-              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#18A96B" }} /> Returned
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8b949e" }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#3fb950" }} /> Returned
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8A8780" }}>
-              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#D94B45" }} /> Lent out
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8b949e" }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#f85149" }} /> Lent out
             </div>
           </div>
           <TogglePill options={["monthly", "annual"]} labels={["Monthly", "Annual"]} value={view} onChange={v => setView(v as any)} />
@@ -536,28 +536,28 @@ function MoneyLentTab({ summary }: { summary: any }) {
       </div>
 
       {chartData.length === 0 ? (
-        <p style={{ fontSize: 13, color: "#A8A5A0" }}>No lending data available.</p>
+        <p style={{ fontSize: 13, color: "#656d76" }}>No lending data available.</p>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "20px 24px" }}>
             <ResponsiveContainer width="100%" height={300}>
               <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onMouseLeave={() => setHoveredSeries(null)}>
-                <CartesianGrid vertical={false} stroke="#F0EEE8" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#A8A5A0", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#C8C5BE", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceMax, niceMax]} />
+                <CartesianGrid vertical={false} stroke="#21262d" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#656d76", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#484f58", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceMax, niceMax]} />
                 <RTooltip content={({ active, payload, label }) => {
                   if (!active || !payload?.length || !hoveredSeries) return null
                   const d = payload[0]?.payload; if (!d) return null
                   if (hoveredSeries === "lent_out" && d.lent_out > 0) return (
-                    <div style={{ background: "#fff", border: "1px solid #E6E4DC", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                      <div style={{ color: "#A8A5A0", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
-                      <div style={{ color: "#D94B45", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Money lent: {fmt(d.lent_out)}</div>
+                    <div style={{ background: "#1c2128", border: "1px solid #30363d", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 16px rgba(1,4,9,0.5)" }}>
+                      <div style={{ color: "#656d76", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
+                      <div style={{ color: "#f85149", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Money lent: {fmt(d.lent_out)}</div>
                     </div>
                   )
                   if (hoveredSeries === "returned" && d.returned > 0) return (
-                    <div style={{ background: "#fff", border: "1px solid #E6E4DC", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                      <div style={{ color: "#A8A5A0", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
-                      <div style={{ color: "#18A96B", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Money returned: {fmt(d.returned)}</div>
+                    <div style={{ background: "#1c2128", border: "1px solid #30363d", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 16px rgba(1,4,9,0.5)" }}>
+                      <div style={{ color: "#656d76", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
+                      <div style={{ color: "#3fb950", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Money returned: {fmt(d.returned)}</div>
                     </div>
                   )
                   return null
@@ -566,20 +566,20 @@ function MoneyLentTab({ summary }: { summary: any }) {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "20px 24px" }}>
             <ResponsiveContainer width="100%" height={300}>
               <ComposedChart data={netData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#F0EEE8" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#A8A5A0", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#C8C5BE", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceNetMax, niceNetMax]} />
+                <CartesianGrid vertical={false} stroke="#21262d" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#656d76", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#484f58", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceNetMax, niceNetMax]} />
                 <RTooltip content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null
                   const d = payload[0]?.payload; if (!d) return null
                   const isPos = d.net >= 0
                   return (
-                    <div style={{ background: "#fff", border: "1px solid #E6E4DC", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                      <div style={{ color: "#A8A5A0", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
-                      <div style={{ color: isPos ? "#18A96B" : "#D94B45", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <div style={{ background: "#1c2128", border: "1px solid #30363d", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 16px rgba(1,4,9,0.5)" }}>
+                      <div style={{ color: "#656d76", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
+                      <div style={{ color: isPos ? "#3fb950" : "#f85149", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
                         Net: {isPos ? "" : "−"}{fmt(Math.abs(d.net))}
                       </div>
                     </div>
@@ -637,8 +637,8 @@ function InvestmentsTab({ summary }: { summary: any }) {
     const barX = x + (width - barW) / 2
     return (
       <g>
-        {invested_out > 0 && <rect x={barX} y={zeroY - investedH} width={barW} height={investedH} fill="#18A96B" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("invested_out")} />}
-        {withdrawn > 0    && <rect x={barX} y={zeroY} width={barW} height={withdrawnH} fill="#D94B45" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("withdrawn")} />}
+        {invested_out > 0 && <rect x={barX} y={zeroY - investedH} width={barW} height={investedH} fill="#3fb950" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("invested_out")} />}
+        {withdrawn > 0    && <rect x={barX} y={zeroY} width={barW} height={withdrawnH} fill="#f85149" rx={3} ry={3} onMouseEnter={() => setHoveredSeries("withdrawn")} />}
       </g>
     )
   }
@@ -653,21 +653,21 @@ function InvestmentsTab({ summary }: { summary: any }) {
     const barW = Math.max(width * 0.5, 4)
     const barX = x + (width - barW) / 2
     const isPos = net >= 0
-    return <rect x={barX} y={isPos ? zeroY - h : zeroY} width={barW} height={h} fill={isPos ? "#18A96B" : "#D94B45"} rx={3} ry={3} />
+    return <rect x={barX} y={isPos ? zeroY - h : zeroY} width={barW} height={h} fill={isPos ? "#3fb950" : "#f85149"} rx={3} ry={3} />
   }
 
   return (
     <div>
       {drawerOpen && (
-        <TransactionDrawer open={true} onClose={() => setDrawerOpen(false)} title="Investments" color="#2A6DD9" financialNature="investment" />
+        <TransactionDrawer open={true} onClose={() => setDrawerOpen(false)} title="Investments" color="#58a6ff" financialNature="investment" />
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 32 }}>
-        <SummaryCard label="Investments" sublabel="Money put in" value={fmt(summary?.investment_out ?? 0)} valueColor="#18A96B" count="" onClick={() => setDrawerOpen(true)} />
-        <SummaryCard label="Withdrawals" sublabel="Money taken out" value={fmt(summary?.investment_in ?? 0)} valueColor="#D94B45" count="" onClick={() => setDrawerOpen(true)} />
+        <SummaryCard label="Investments" sublabel="Money put in" value={fmt(summary?.investment_out ?? 0)} valueColor="#3fb950" count="" onClick={() => setDrawerOpen(true)} />
+        <SummaryCard label="Withdrawals" sublabel="Money taken out" value={fmt(summary?.investment_in ?? 0)} valueColor="#f85149" count="" onClick={() => setDrawerOpen(true)} />
         {(() => {
           const net = (summary?.investment_out ?? 0) - (summary?.investment_in ?? 0)
-          return <SummaryCard label="Net" sublabel="Invested − Withdrawn" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#18A96B" : "#D94B45"} count="" onClick={() => setDrawerOpen(true)} />
+          return <SummaryCard label="Net" sublabel="Invested − Withdrawn" value={(net < 0 ? "−" : "") + fmt(Math.abs(net))} valueColor={net >= 0 ? "#3fb950" : "#f85149"} count="" onClick={() => setDrawerOpen(true)} />
         })()}
       </div>
 
@@ -678,11 +678,11 @@ function InvestmentsTab({ summary }: { summary: any }) {
         </div>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <div style={{ display: "flex", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8A8780" }}>
-              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#18A96B" }} /> Invested (out)
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8b949e" }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#3fb950" }} /> Invested (out)
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8A8780" }}>
-              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#D94B45" }} /> Withdrawn
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8b949e" }}>
+              <div style={{ width: 9, height: 9, borderRadius: 2, background: "#f85149" }} /> Withdrawn
             </div>
           </div>
           <TogglePill options={["monthly", "annual"]} labels={["Monthly", "Annual"]} value={view} onChange={v => setView(v as any)} />
@@ -690,28 +690,28 @@ function InvestmentsTab({ summary }: { summary: any }) {
       </div>
 
       {chartData.length === 0 ? (
-        <p style={{ fontSize: 13, color: "#A8A5A0" }}>No investment data available.</p>
+        <p style={{ fontSize: 13, color: "#656d76" }}>No investment data available.</p>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "20px 24px" }}>
             <ResponsiveContainer width="100%" height={300}>
               <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} onMouseLeave={() => setHoveredSeries(null)}>
-                <CartesianGrid vertical={false} stroke="#F0EEE8" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#A8A5A0", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#C8C5BE", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceMax, niceMax]} />
+                <CartesianGrid vertical={false} stroke="#21262d" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#656d76", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#484f58", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceMax, niceMax]} />
                 <RTooltip content={({ active, payload, label }) => {
                   if (!active || !payload?.length || !hoveredSeries) return null
                   const d = payload[0]?.payload; if (!d) return null
                   if (hoveredSeries === "invested_out" && d.invested_out > 0) return (
-                    <div style={{ background: "#fff", border: "1px solid #E6E4DC", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                      <div style={{ color: "#A8A5A0", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
-                      <div style={{ color: "#18A96B", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Investment: {fmt(d.invested_out)}</div>
+                    <div style={{ background: "#1c2128", border: "1px solid #30363d", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 16px rgba(1,4,9,0.5)" }}>
+                      <div style={{ color: "#656d76", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
+                      <div style={{ color: "#3fb950", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Investment: {fmt(d.invested_out)}</div>
                     </div>
                   )
                   if (hoveredSeries === "withdrawn" && d.withdrawn > 0) return (
-                    <div style={{ background: "#fff", border: "1px solid #E6E4DC", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                      <div style={{ color: "#A8A5A0", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
-                      <div style={{ color: "#D94B45", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Withdrawal: {fmt(d.withdrawn)}</div>
+                    <div style={{ background: "#1c2128", border: "1px solid #30363d", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 16px rgba(1,4,9,0.5)" }}>
+                      <div style={{ color: "#656d76", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
+                      <div style={{ color: "#f85149", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Withdrawal: {fmt(d.withdrawn)}</div>
                     </div>
                   )
                   return null
@@ -720,20 +720,20 @@ function InvestmentsTab({ summary }: { summary: any }) {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ background: "#FFFFFF", border: "1px solid #E6E4DC", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 12, padding: "20px 24px" }}>
             <ResponsiveContainer width="100%" height={300}>
               <ComposedChart data={netData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#F0EEE8" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#A8A5A0", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#C8C5BE", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceNetMax, niceNetMax]} />
+                <CartesianGrid vertical={false} stroke="#21262d" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#656d76", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10, fill: "#484f58", fontFamily: "'JetBrains Mono', monospace" }} axisLine={false} tickLine={false} width={52} domain={[-niceNetMax, niceNetMax]} />
                 <RTooltip content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null
                   const d = payload[0]?.payload; if (!d) return null
                   const isPos = d.net >= 0
                   return (
-                    <div style={{ background: "#fff", border: "1px solid #E6E4DC", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                      <div style={{ color: "#A8A5A0", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
-                      <div style={{ color: isPos ? "#18A96B" : "#D94B45", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Net: {isPos ? "" : "−"}{fmt(Math.abs(d.net))}</div>
+                    <div style={{ background: "#1c2128", border: "1px solid #30363d", borderRadius: 9, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 16px rgba(1,4,9,0.5)" }}>
+                      <div style={{ color: "#656d76", marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{label}</div>
+                      <div style={{ color: isPos ? "#3fb950" : "#f85149", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>Net: {isPos ? "" : "−"}{fmt(Math.abs(d.net))}</div>
                     </div>
                   )
                 }} />
@@ -749,7 +749,7 @@ function InvestmentsTab({ summary }: { summary: any }) {
 
 // ── TrendChart (overview) ─────────────────────────────────────────────────────
 function TrendChart({ items }: { items: any[] }) {
-  if (!items.length) return <p style={{ fontSize: 13, color: "#A8A5A0" }}>No trend data available.</p>
+  if (!items.length) return <p style={{ fontSize: 13, color: "#656d76" }}>No trend data available.</p>
 
   const CHART_H  = 200
   const Y_STEPS  = 4
@@ -771,8 +771,8 @@ function TrendChart({ items }: { items: any[] }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 16, marginBottom: 12, justifyContent: "flex-end" }}>
-        {[{ label: "Income", color: "#18A96B" }, { label: "Expenses", color: "#D94B45" }].map(s => (
-          <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8A8780" }}>
+        {[{ label: "Income", color: "#3fb950" }, { label: "Expenses", color: "#f85149" }].map(s => (
+          <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#8b949e" }}>
             <div style={{ width: 9, height: 9, borderRadius: 2, background: s.color }} />
             {s.label}
           </div>
@@ -784,7 +784,7 @@ function TrendChart({ items }: { items: any[] }) {
           {gridLines.map((v, i) => (
             <span key={i} style={{
               position: "absolute", top: (1 - (v / niceMax)) * CHART_H - 8, right: 8,
-              fontSize: 9, color: "#C8C5BE", whiteSpace: "nowrap", fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9, color: "#484f58", whiteSpace: "nowrap", fontFamily: "'JetBrains Mono', monospace",
             }}>{fmtY(v)}</span>
           ))}
         </div>
@@ -795,7 +795,7 @@ function TrendChart({ items }: { items: any[] }) {
               <div key={i} style={{
                 position: "absolute", top: (1 - (v / niceMax)) * CHART_H,
                 left: 0, right: 0, height: "0.5px",
-                background: i === 0 ? "#D0CEC8" : "#F0EEE8",
+                background: i === 0 ? "#30363d" : "#21262d",
               }} />
             ))}
             <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", alignItems: "flex-end", gap: BAR_GAP, height: CHART_H }}>
@@ -804,17 +804,17 @@ function TrendChart({ items }: { items: any[] }) {
                 const hIncome = item.income > 0 ? Math.max((item.income / niceMax) * CHART_H, 3) : 0
                 return (
                   <div key={item.key} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end", gap: 2 }}>
-                    <div title={`${item.label} income: ${fmt(item.income)}`} style={{ flex: 1, height: hIncome, background: "#18A96B", borderRadius: "3px 3px 0 0", opacity: hIncome === 0 ? 0 : 0.85 }} />
-                    <div title={`${item.label} expenses: ${fmt(item.spend)}`} style={{ flex: 1, height: hSpend, background: "#D94B45", borderRadius: "3px 3px 0 0", opacity: hSpend === 0 ? 0 : 0.85 }} />
+                    <div title={`${item.label} income: ${fmt(item.income)}`} style={{ flex: 1, height: hIncome, background: "#3fb950", borderRadius: "3px 3px 0 0", opacity: hIncome === 0 ? 0 : 0.85 }} />
+                    <div title={`${item.label} expenses: ${fmt(item.spend)}`} style={{ flex: 1, height: hSpend, background: "#f85149", borderRadius: "3px 3px 0 0", opacity: hSpend === 0 ? 0 : 0.85 }} />
                   </div>
                 )
               })}
             </div>
           </div>
-          <div style={{ height: "0.5px", background: "#D0CEC8", marginBottom: 6 }} />
+          <div style={{ height: "0.5px", background: "#30363d", marginBottom: 6 }} />
           <div style={{ display: "flex", gap: BAR_GAP }}>
             {items.map((item: any) => (
-              <div key={item.key} style={{ flex: 1, textAlign: "center", fontSize: 9, color: "#C8C5BE", fontFamily: "'JetBrains Mono', monospace" }}>
+              <div key={item.key} style={{ flex: 1, textAlign: "center", fontSize: 9, color: "#484f58", fontFamily: "'JetBrains Mono', monospace" }}>
                 {item.label}
               </div>
             ))}
@@ -836,24 +836,24 @@ function SummaryCard({ label, sublabel, value, valueColor, count, onClick }: {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: "#FFFFFF",
-        border: `1px solid ${hov && onClick ? "#D0CEC8" : "#E6E4DC"}`,
+        background: "#161b22",
+        border: `1px solid ${hov && onClick ? "#484f58" : "#30363d"}`,
         borderRadius: 12, padding: "20px 22px",
         cursor: onClick ? "pointer" : "default",
-        boxShadow: hov && onClick ? "0 4px 12px rgba(0,0,0,0.08)" : "0 1px 3px rgba(0,0,0,0.04)",
+        boxShadow: hov && onClick ? "0 4px 16px rgba(1,4,9,0.4)" : "none",
         transition: "border-color 0.15s, box-shadow 0.15s",
       }}
     >
-      <p style={{ margin: "0 0 3px", fontSize: 10, fontWeight: 700, color: "#A8A5A0", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+      <p style={{ margin: "0 0 3px", fontSize: 10, fontWeight: 700, color: "#656d76", textTransform: "uppercase", letterSpacing: "0.07em" }}>
         {label}
       </p>
-      <p style={{ margin: "0 0 14px", fontSize: 11, color: "#C8C5BE", lineHeight: 1.4 }}>
+      <p style={{ margin: "0 0 14px", fontSize: 11, color: "#484f58", lineHeight: 1.4 }}>
         {sublabel}
       </p>
       <p style={{ margin: "0 0 4px", fontSize: 26, fontWeight: 700, color: valueColor, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.03em", lineHeight: 1 }}>
         {value}
       </p>
-      {count && <p style={{ margin: 0, fontSize: 11, color: "#A8A5A0" }}>{count}</p>}
+      {count && <p style={{ margin: 0, fontSize: 11, color: "#656d76" }}>{count}</p>}
     </div>
   )
 }
@@ -863,15 +863,15 @@ function TogglePill({ options, labels, value, onChange }: {
   options: string[]; labels: string[]; value: string; onChange: (v: string) => void
 }) {
   return (
-    <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: "1px solid #E6E4DC", background: "#F5F4F2" }}>
+    <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: "1px solid #30363d", background: "#21262d" }}>
       {options.map((opt, i) => (
         <button key={opt} onClick={() => onChange(opt)} style={{
           padding: "4px 12px", fontSize: 11, border: "none", cursor: "pointer",
-          background: value === opt ? "#1A1916" : "transparent",
-          color: value === opt ? "#FFFFFF" : "#8A8780",
+          background: value === opt ? "#161b22" : "transparent",
+          color: value === opt ? "#e6edf3" : "#656d76",
           fontWeight: value === opt ? 700 : 500,
           transition: "background 0.12s",
-          fontFamily: "'Manrope', sans-serif",
+          fontFamily: "'Outfit', sans-serif",
           letterSpacing: "0.01em",
         }}>
           {labels[i]}
