@@ -7,6 +7,14 @@ interface Props {
 
 const ACCEPTED = [".csv", ".xls", ".xlsx", ".pdf", ".ofx", ".qif"]
 
+const UploadCloudIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 16 12 12 8 16"/>
+    <line x1="12" y1="12" x2="12" y2="21"/>
+    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+  </svg>
+)
+
 export default function DropZone({ onFiles, disabled = false }: Props) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -32,22 +40,29 @@ export default function DropZone({ onFiles, disabled = false }: Props) {
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       style={{
-        border: `2px dashed ${disabled ? "#e5e7eb" : dragging ? "#378ADD" : "#b4b2a9"}`,
+        border: `1.5px dashed ${disabled ? "#D0CEC8" : dragging ? "#2A6DD9" : "#C8C5BE"}`,
         borderRadius: 12,
-        padding: "2.5rem",
+        padding: "40px 32px",
         textAlign: "center",
         cursor: disabled ? "not-allowed" : "pointer",
-        background: disabled ? "#f9fafb" : dragging ? "#E6F1FB" : "transparent",
-        opacity: disabled ? 0.55 : 1,
-        transition: "border-color 0.15s, background 0.15s, opacity 0.15s",
+        background: disabled ? "#FAF9F7" : dragging ? "#EFF4FE" : "#FAFAF8",
+        opacity: disabled ? 0.6 : 1,
+        transition: "border-color 0.15s, background 0.15s",
       }}
     >
-      <div style={{ fontSize: 32, marginBottom: 8 }}>📂</div>
-      <p style={{ margin: 0, fontWeight: 500, fontSize: 15, color: disabled ? "#9ca3af" : undefined }}>
-        {disabled ? "Select an account first" : "Drop your statement here"}
+      <div style={{
+        color: disabled ? "#A8A5A0" : dragging ? "#2A6DD9" : "#A8A5A0",
+        marginBottom: 12, transition: "color 0.15s",
+        display: "flex", justifyContent: "center",
+      }}>
+        <UploadCloudIcon />
+      </div>
+      <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: disabled ? "#A8A5A0" : "#1A1916" }}>
+        {disabled ? "Select an account first" : dragging ? "Drop to import" : "Drop your statement here"}
       </p>
-      <p style={{ margin: "6px 0 0", fontSize: 13, color: "#888780" }}>
-        {ACCEPTED.join(", ")} — multiple files supported
+      <p style={{ margin: "6px 0 0", fontSize: 12, color: "#A8A5A0" }}>
+        or <span style={{ color: disabled ? "#A8A5A0" : "#2A6DD9", fontWeight: 500 }}>click to browse</span>
+        {" "}· {ACCEPTED.join(", ")}
       </p>
       <input
         ref={inputRef}

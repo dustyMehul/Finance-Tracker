@@ -7,7 +7,6 @@ interface Props {
   onClose: () => void
   title: string
   color?: string
-  // pass one of these to filter
   labelId?: string
   financialNature?: string
 }
@@ -36,46 +35,77 @@ export default function TransactionDrawer({ open, onClose, title, color, labelId
 
   return (
     <>
-      {/* backdrop */}
+      {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.2)", zIndex: 200 }}
+        style={{
+          position: "fixed", inset: 0,
+          background: "rgba(17,17,16,0.35)",
+          backdropFilter: "blur(2px)",
+          zIndex: 200,
+        }}
       />
 
-      {/* drawer */}
+      {/* Drawer */}
       <div style={{
         position: "fixed", top: 0, right: 0, bottom: 0,
-        width: 440, background: "#fff", zIndex: 201,
-        boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+        width: 460, background: "#FFFFFF",
+        zIndex: 201,
+        boxShadow: "-8px 0 32px rgba(0,0,0,0.10), -1px 0 0 #E6E4DC",
         display: "flex", flexDirection: "column",
       }}>
-        {/* header */}
+
+        {/* Header */}
         <div style={{
-          padding: "18px 20px", borderBottom: "0.5px solid #d3d1c7",
-          display: "flex", alignItems: "center", gap: 10, flexShrink: 0,
+          padding: "20px 24px",
+          borderBottom: "1px solid #E6E4DC",
+          display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
+          background: "#FAFAF8",
         }}>
-          {color && <div style={{ width: 12, height: 12, borderRadius: "50%", background: color, flexShrink: 0 }} />}
+          {color && (
+            <div style={{
+              width: 10, height: 10, borderRadius: "50%",
+              background: color, flexShrink: 0,
+              boxShadow: `0 0 0 3px ${color}22`,
+            }} />
+          )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>{title}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1A1916", letterSpacing: "-0.01em" }}>
+              {title}
+            </div>
             {!isLoading && (
-              <div style={{ fontSize: 12, color: "#888780", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "#A8A5A0", marginTop: 2 }}>
                 {txns.length} transaction{txns.length !== 1 ? "s" : ""}
-                {txns.length > 0 && <span> · {total >= 0 ? "+" : "−"}{fmt(Math.abs(total))}</span>}
+                {txns.length > 0 && (
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", marginLeft: 6 }}>
+                    · {total >= 0 ? "+" : "−"}{fmt(Math.abs(total))}
+                  </span>
+                )}
               </div>
             )}
           </div>
-          <button onClick={onClose} style={{
-            background: "none", border: "none", fontSize: 22, cursor: "pointer",
-            color: "#6b7280", lineHeight: 1, flexShrink: 0,
-          }}>×</button>
+          <button
+            onClick={onClose}
+            style={{
+              width: 30, height: 30, borderRadius: 8,
+              border: "1px solid #E6E4DC", background: "#FFFFFF",
+              fontSize: 18, cursor: "pointer", color: "#6B6862",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              lineHeight: 1, flexShrink: 0, transition: "background 0.1s",
+            }}
+          >×</button>
         </div>
 
-        {/* list */}
+        {/* List */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {isLoading ? (
-            <div style={{ padding: "2rem", fontSize: 13, color: "#888780", textAlign: "center" }}>Loading…</div>
+            <div style={{ padding: "48px 24px", fontSize: 13, color: "#A8A5A0", textAlign: "center" }}>
+              Loading…
+            </div>
           ) : txns.length === 0 ? (
-            <div style={{ padding: "2rem", fontSize: 13, color: "#888780", textAlign: "center" }}>No transactions found.</div>
+            <div style={{ padding: "48px 24px", fontSize: 13, color: "#A8A5A0", textAlign: "center" }}>
+              No transactions found.
+            </div>
           ) : (
             txns.map(t => <TxnRow key={t.id} txn={t} />)
           )}
@@ -89,23 +119,39 @@ function TxnRow({ txn }: { txn: Transaction }) {
   const isDebit = txn.transaction_type === "debit"
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "11px 20px", borderBottom: "0.5px solid #f3f1e9",
+      display: "flex", alignItems: "center", gap: 14,
+      padding: "12px 24px", borderBottom: "1px solid #F0EEE8",
     }}>
+      {/* Color dot for debit/credit */}
+      <div style={{
+        width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
+        background: isDebit ? "#D94B45" : "#18A96B",
+      }} />
+
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: "#1A1916", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {txn.description || txn.description_raw}
         </div>
-        <div style={{ fontSize: 11, color: "#888780", marginTop: 2 }}>
-          {new Date(txn.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+        <div style={{ fontSize: 11, color: "#A8A5A0", marginTop: 2 }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            {new Date(txn.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
           {txn.account_nickname && <span> · {txn.account_nickname}</span>}
         </div>
       </div>
+
       <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: isDebit ? "#E24B4A" : "#1D9E75" }}>
+        <div style={{
+          fontSize: 13, fontWeight: 600,
+          fontFamily: "'JetBrains Mono', monospace",
+          color: isDebit ? "#D94B45" : "#18A96B",
+          letterSpacing: "-0.02em",
+        }}>
           {isDebit ? "−" : "+"}{fmt(txn.amount)}
         </div>
-        <div style={{ fontSize: 11, color: "#b4b2a9", marginTop: 1 }}>{txn.review_status}</div>
+        <div style={{ fontSize: 10, color: "#C8C5BE", marginTop: 1, textTransform: "capitalize" }}>
+          {txn.review_status}
+        </div>
       </div>
     </div>
   )
